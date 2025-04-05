@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+  <rect width="600" height="400" fill="#f0f7ff" />
+  <g transform="translate(100, 50)">
+    <!-- Background elements -->
+    <rect x="0" y="0" width="400" height="300" rx="15" fill="#e1effe" />
+    <circle cx="50" cy="50" r="80" fill="#c3ddfd" opacity="0.6" />
+    <circle cx="350" cy="250" r="100" fill="#c3ddfd" opacity="0.6" />
+    
+    <!-- Product showcase -->
+    <g transform="translate(50, 60)">
+      <!-- Product 1 - Smartphone -->
+      <rect x="0" y="0" width="90" height="160" rx="10" fill="#3b82f6" />
+      <rect x="5" y="10" width="80" height="140" rx="5" fill="#1e40af" />
+      <circle cx="45" cy="165" r="5" fill="#1e40af" />
+      
+      <!-- Product 2 - Laptop -->
+      <g transform="translate(120, 40)">
+        <rect x="0" y="0" width="160" height="100" rx="5" fill="#3b82f6" />
+        <rect x="5" y="5" width="150" height="90" rx="2" fill="#1e40af" />
+        <rect x="60" y="100" width="40" height="5" rx="2" fill="#3b82f6" />
+      </g>
+      
+      <!-- Product 3 - Headphones -->
+      <g transform="translate(310, 30)">
+        <circle cx="0" cy="40" r="25" fill="#3b82f6" />
+        <circle cx="0" cy="40" r="15" fill="#1e40af" />
+        <path d="M -25 40 Q -25 10 0 10 Q 25 10 25 40" stroke="#3b82f6" stroke-width="5" fill="none" />
+      </g>
+    </g>
+    
+    <!-- Text elements -->
+    <g transform="translate(80, 240)">
+      <rect x="0" y="0" width="240" height="50" rx="10" fill="#2563eb" />
+      <text x="120" y="32" font-family="Arial" font-size="20" font-weight="bold" fill="white" text-anchor="middle">SHOP NOW</text>
+    </g>
+    
+    <!-- Decorative elements -->
+    <g>
+      <circle cx="30" cy="30" r="10" fill="#f59e0b" />
+      <circle cx="370" cy="40" r="15" fill="#10b981" />
+      <circle cx="320" cy="280" r="12" fill="#8b5cf6" />
+      <path d="M 380 100 L 390 120 L 370 120 Z" fill="#f43f5e" />
+      <path d="M 50 280 L 70 290 L 50 300 L 30 290 Z" fill="#f43f5e" />
+    </g>
+  </g>
+</svg>

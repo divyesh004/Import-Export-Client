@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#e9ecef" />
+  <g transform="translate(200, 120)">
+    <!-- Cosmetic Bottle -->
+    <rect x="-80" y="-40" width="40" height="80" rx="10" fill="#fd7e14" />
+    <rect x="-75" y="-35" width="30" height="10" rx="5" fill="#f8f9fa" />
+    <!-- Brush -->
+    <rect x="-10" y="-50" width="10" height="100" fill="#6c757d" />
+    <path d="M -10 -50 C 0 -70 10 -70 20 -50 Z" fill="#e64980" />
+    <!-- Medicine Bottle -->
+    <rect x="50" y="-30" width="30" height="60" rx="5" fill="#7950f2" />
+    <rect x="55" y="-35" width="20" height="10" rx="3" fill="#f8f9fa" />
+    <!-- Heart Symbol -->
+    <path d="M -30 30 C -40 10 -60 20 -50 40 C -40 60 -30 50 -30 40 C -30 50 -20 60 -10 40 C 0 20 -20 10 -30 30 Z" fill="#e64980" />
+  </g>
+  <text x="200" y="230" font-family="Arial" font-size="24" fill="#212529" text-anchor="middle">Beauty & Health</text>
+</svg>

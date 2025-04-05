@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300" viewBox="0 0 600 300">
+  <rect width="600" height="300" fill="#e9ecef" />
+  <g transform="translate(300, 150)">
+    <!-- Sun -->
+    <circle cx="-150" cy="-50" r="40" fill="#fd7e14" />
+    <g transform="translate(-150, -50)">
+      <line x1="0" y1="-60" x2="0" y2="-50" stroke="#fd7e14" stroke-width="4" />
+      <line x1="0" y1="50" x2="0" y2="60" stroke="#fd7e14" stroke-width="4" />
+      <line x1="-60" y1="0" x2="-50" y2="0" stroke="#fd7e14" stroke-width="4" />
+      <line x1="50" y1="0" x2="60" y2="0" stroke="#fd7e14" stroke-width="4" />
+      <line x1="-42" y1="-42" x2="-35" y2="-35" stroke="#fd7e14" stroke-width="4" />
+      <line x1="42" y1="-42" x2="35" y2="-35" stroke="#fd7e14" stroke-width="4" />
+      <line x1="-42" y1="42" x2="-35" y2="35" stroke="#fd7e14" stroke-width="4" />
+      <line x1="42" y1="42" x2="35" y2="35" stroke="#fd7e14" stroke-width="4" />
+    </g>
+    <!-- Beach Items -->
+    <path d="M -50 80 L 150 80 L 100 0 L 0 0 Z" fill="#adb5bd" />
+    <circle cx="50" cy="-20" r="30" fill="#e64980" stroke="#212529" stroke-width="2" />
+    <path d="M 50 -50 L 50 50 L 150 0 Z" fill="#4263eb" />
+    <!-- Sale Text -->
+    <text x="0" y="-80" font-family="Arial" font-weight="bold" font-size="48" fill="#212529" text-anchor="middle">SUMMER SALE</text>
+    <text x="0" y="-40" font-family="Arial" font-size="24" fill="#495057" text-anchor="middle">Up to 40% OFF</text>
+  </g>
+</svg>
