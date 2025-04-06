@@ -64,7 +64,7 @@ const RoleBasedRedirect = () => {
     return null;
   } else if (currentUser.role === 'seller') {
     // Redirect seller to seller dashboard
-    window.location.href = '/seller';
+    window.location.href = 'https://import-export-seller.vercel.app/';
     return null;
   }
   
