@@ -227,7 +227,7 @@ const Register = () => {
                     
                     {/* Phone Number */}
                     <div>
-                      <label htmlFor="phone" className="block text-gray-700 font-medium mb-2 text-sm">Phone Number (Optional)</label>
+                      <label htmlFor="phone" className="block text-gray-700 font-medium mb-2 text-sm">Phone Number </label>
                       <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <FaPhone className="text-gray-400 group-hover:text-primary-500 transition-colors" />
