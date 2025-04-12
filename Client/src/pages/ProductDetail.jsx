@@ -688,11 +688,11 @@ const ProductDetail = ({ addToCart }) => {
 
         {/* RTQ Modal */}
         <AnimatePresence>
-          {rtqModalOpen && (
+          {rtqModalOpen && product && (
             <RTQForm
               isOpen={rtqModalOpen}
               onClose={() => setRtqModalOpen(false)}
-              productId={product.id}
+              product={product}
               productName={product.name}
             />
           )}

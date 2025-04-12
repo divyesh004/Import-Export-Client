@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import notification styles */
-@import './styles/notifications.css';
 
 @layer base {
   html {

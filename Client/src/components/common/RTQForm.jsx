@@ -26,7 +26,8 @@ const RTQForm = ({ isOpen, onClose, product }) => {
   // Add request interceptor to include token in headers
   api.interceptors.request.use(
     (config) => {
-      const token = localStorage.getItem('token');
+      // Try to get token from currentUser first, then fallback to localStorage
+      const token = currentUser?.token || localStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -40,6 +41,15 @@ const RTQForm = ({ isOpen, onClose, product }) => {
     const fetchUserData = async () => {
       if (!currentUser || !isOpen) return;
 
+      // Add check for product before proceeding
+      if (!product) {
+        console.error('Product is undefined in RTQForm');
+        showNotification('Unable to load product information. Please try again later.', 'error');
+        setLoading(false);
+        onClose(); // Close the modal if product is undefined
+        return;
+      }
+
       try {
         setLoading(true);
         const response = await api.get('/auth/profile');
@@ -50,14 +60,20 @@ const RTQForm = ({ isOpen, onClose, product }) => {
           setUserData({...response.data});
         }
 
-        // Check if user has already made an inquiry for this product
-        const inquiriesResponse = await api.get('/qa/questions');
-        const userInquiries = inquiriesResponse.data;
-        const hasAlreadyInquired = userInquiries.some(inquiry => 
-          inquiry.product_id === product.id
-        );
-        
-        setHasInquired(hasAlreadyInquired);
+        // Only check for inquiries if product exists and has an id
+        if (product.id) {
+          try {
+            const inquiriesResponse = await api.get('/qa/questions');
+            const userInquiries = inquiriesResponse.data;
+            const hasAlreadyInquired = userInquiries.some(inquiry => 
+              inquiry.product_id === product.id
+            );
+            
+            setHasInquired(hasAlreadyInquired);
+          } catch (inquiryErr) {
+            console.error('Failed to fetch inquiry data:', inquiryErr);
+          }
+        }
       } catch (err) {
         console.error('Failed to fetch user data:', err);
         showNotification('Unable to load your profile information. Please try again later.', 'error');
@@ -67,7 +83,7 @@ const RTQForm = ({ isOpen, onClose, product }) => {
     };
 
     fetchUserData();
-  }, [currentUser, isOpen, product?.id]);
+  }, [currentUser, isOpen, product, showNotification]);
   
   // Update calculated price when product changes
   useEffect(() => {
@@ -130,12 +146,12 @@ const RTQForm = ({ isOpen, onClose, product }) => {
       // Prepare data for backend submission
       // Removed email and phone number as per requirement
       const quoteRequestData = {
-        product_id: product.id,
-        question: `Quote Request for ${product.name} - Quantity: ${values.quantity}\n\nCustomer Details:\nName: ${values.name}\n\nMessage: ${values.message}\n\nCalculated Price: $${calculatePrice(values.quantity)}`
+        product_id: product?.id, // Added optional chaining to safely access id
+        question: `Quote Request for ${product?.name || 'Product'} - Quantity: ${values.quantity}\n\nCustomer Details:\nName: ${values.name}\n\nMessage: ${values.message}\n\nCalculated Price: $${calculatePrice(values.quantity)}`
       };
       
       // Send data to the backend
-      const response = await api.post('/qa/questions', quoteRequestData);
+      const response = await api.post('qa/questions', quoteRequestData);
       
       console.log('RTQ Form Submitted:', response.data);
       

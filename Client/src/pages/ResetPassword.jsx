@@ -16,11 +16,20 @@ const ResetPassword = () => {
 
   // Extract token from URL on component mount
   useEffect(() => {
+    // First check if token is in URL params
     const searchParams = new URLSearchParams(location.search);
     const tokenFromUrl = searchParams.get('token');
     
+    // Then check if token is in URL path parameter
+    const pathSegments = location.pathname.split('/');
+    const tokenFromPath = pathSegments[pathSegments.length - 1];
+    const isTokenInPath = pathSegments.length > 2 && pathSegments[1] === 'reset-password';
+    
+    // Use token from either source
     if (tokenFromUrl) {
       setToken(tokenFromUrl);
+    } else if (isTokenInPath && tokenFromPath !== 'reset-password') {
+      setToken(tokenFromPath);
     } else {
       setError('Invalid or unavailable reset token. Please request a new password reset link.');
     }
