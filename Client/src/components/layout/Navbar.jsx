@@ -131,6 +131,7 @@ const Navbar = () => {
               <span>Home</span>
             </Link>
             
+      
             {/* Products Dropdown */}
             <div className="relative">
               <button 
@@ -385,6 +386,8 @@ const Navbar = () => {
                   
                   {/* Divider */}
                   <div className="border-t border-gray-200 my-2"></div>
+                  
+            
                   
                   <Link
                     to="/profile"

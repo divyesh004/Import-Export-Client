@@ -74,9 +74,9 @@ const RoleBasedRedirect = () => {
 
 function App() {
   const { showLoginPopup, toggleLoginPopup } = useAuth();
-
-  return (
-    <div className="flex flex-col min-h-screen">
+  
+    return (
+      <div className="flex flex-col min-h-screen">
       <Navbar />
       
       {/* Login Popup */}
@@ -125,7 +125,7 @@ function App() {
       </main>
       
       <Footer />
-    </div>
+      </div>
   )
 }
 

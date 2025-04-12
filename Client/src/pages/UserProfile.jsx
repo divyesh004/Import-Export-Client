@@ -2,12 +2,45 @@ import { useState, useEffect } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaUser, FaEnvelope, FaBuilding, FaPhone, FaMapMarkerAlt, FaSave, FaEdit, FaSignOutAlt, FaQuestionCircle, FaShoppingBag, FaHistory, FaUserCircle, FaShieldAlt, FaLock } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaBuilding, FaPhone, FaMapMarkerAlt, FaSave, FaEdit, FaSignOutAlt, FaQuestionCircle, FaShoppingBag, FaHistory, FaUserCircle, FaShieldAlt, FaLock, FaExclamationTriangle, FaCheckCircle, FaGlobe , FaInfoCircle  } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import Skeleton from '../components/common/Skeleton';
 import Loading from '../components/common/Loading';
 import { API_BASE_URL } from '../config/env';
+import ReactCountryFlag from 'react-country-flag';
+
+// List of countries with ISO codes for dropdown
+const countries = [
+  { name: 'India', code: 'IN' },
+  { name: 'United States', code: 'US' },
+  { name: 'United Kingdom', code: 'GB' },
+  { name: 'Canada', code: 'CA' },
+  { name: 'Australia', code: 'AU' },
+  { name: 'China', code: 'CN' },
+  { name: 'Japan', code: 'JP' },
+  { name: 'Germany', code: 'DE' },
+  { name: 'France', code: 'FR' },
+  { name: 'Brazil', code: 'BR' },
+  { name: 'Russia', code: 'RU' },
+  { name: 'South Africa', code: 'ZA' },
+  { name: 'Mexico', code: 'MX' },
+  { name: 'Italy', code: 'IT' },
+  { name: 'Spain', code: 'ES' },
+  { name: 'South Korea', code: 'KR' },
+  { name: 'Indonesia', code: 'ID' },
+  { name: 'Turkey', code: 'TR' },
+  { name: 'Saudi Arabia', code: 'SA' },
+  { name: 'UAE', code: 'AE' },
+  { name: 'Pakistan', code: 'PK' },
+  { name: 'Bangladesh', code: 'BD' },
+  { name: 'Thailand', code: 'TH' },
+  { name: 'Vietnam', code: 'VN' },
+  { name: 'Malaysia', code: 'MY' },
+  { name: 'Singapore', code: 'SG' },
+  { name: 'Nepal', code: 'NP' },
+  { name: 'Sri Lanka', code: 'LK' }
+];
 
 const UserProfile = () => {
   const { currentUser, showNotification, logout } = useAuth();
@@ -16,7 +49,9 @@ const UserProfile = () => {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
+  const [editingField, setEditingField] = useState(null); // Track which field is being edited
   const [isSaving, setIsSaving] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(true); // Default to true to avoid showing warning until we know
   const navigate = useNavigate();
 
   // Profile validation schema
@@ -25,6 +60,7 @@ const UserProfile = () => {
     email: Yup.string().email('Invalid email address').required('Email is required'),
     phone: Yup.string().nullable(),
     address: Yup.string().nullable(),
+    country: Yup.string().nullable(),
     company_name: Yup.string().when('role', {
       is: 'seller',
       then: () => Yup.string().required('Company name is required for sellers'),
@@ -63,8 +99,16 @@ const UserProfile = () => {
         // Make sure we're setting the profile data correctly
         if (response.data && response.data.profile) {
           setProfileData({...response.data.profile});
+          // Check if email is verified (assuming the API returns this information)
+          // If the API doesn't return this info, you might need to modify the backend
+          // For now, we'll simulate this with a random value for demonstration
+          const verified = response.data.profile.email_verified || false;
+          setIsEmailVerified(verified);
         } else {
           setProfileData({...response.data});
+          // Check if email is verified
+          const verified = response.data.email_verified || false;
+          setIsEmailVerified(verified);
         }
       } catch (err) {
         const errorMessage = err.response?.data?.message || 'Failed to fetch profile data';
@@ -116,6 +160,10 @@ const UserProfile = () => {
       
       if (values.address && values.address !== '') {
         updateData.address = values.address;
+      }
+      
+      if (values.country && values.country !== '') {
+        updateData.country = values.country;
       }
       
       if (values.company_name && values.company_name !== '') {
@@ -171,6 +219,29 @@ const UserProfile = () => {
     } finally {
       setSubmitting(false);
       setIsSaving(false);
+    }
+  };
+
+  // Send verification email
+  const sendVerificationEmail = async () => {
+    try {
+      setLoading(true);
+      // Using the correct API endpoint for email verification
+      const response = await api.post('/auth/verify-email/resend');
+      
+      if (response.data && response.data.success) {
+        showNotification('Verification email sent! Please check your inbox.', 'success');
+        // Close the verification popup after successful email sending
+        setShowVerificationPopup(false);
+      } else {
+        throw new Error('Failed to send verification email');
+      }
+    } catch (err) {
+      console.error('Email verification error:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to send verification email';
+      showNotification(errorMessage, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -276,11 +347,20 @@ const UserProfile = () => {
   }
 
   return (
-    <div className="py-8 sm:py-12 bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
+    <div className="py-8 sm:py-12 bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 min-h-screen relative">
+      <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-r from-primary-500/20 to-primary-700/20 -z-10"></div>
+      
       <div className="container max-w-6xl mx-auto px-4 sm:px-6">
         {/* Page Header */}
-        <div className="text-center mb-8 sm:mb-12">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">My Account</h1>
+        <div className="text-center mb-8 sm:mb-12 relative">
+          <div className="absolute inset-0 flex items-center justify-center opacity-10 -z-10">
+            <svg className="w-64 h-64" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#4F46E5" d="M45.7,-76.2C58.9,-69.2,69.3,-55.7,76.4,-41.1C83.4,-26.6,87.2,-11,86.6,4.3C86,19.7,81,34.7,72.1,47.2C63.2,59.7,50.4,69.6,36.3,75.3C22.2,81,6.9,82.5,-8.6,80.8C-24.1,79.1,-39.7,74.3,-51.5,64.5C-63.3,54.8,-71.3,40.1,-76.8,24.5C-82.3,8.9,-85.3,-7.7,-81.3,-22.1C-77.3,-36.5,-66.3,-48.8,-53.2,-56C-40.1,-63.2,-25,-65.3,-10.8,-70.8C3.4,-76.3,32.5,-83.2,45.7,-76.2Z" transform="translate(100 100)" />
+            </svg>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 relative">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-800">My Account</span>
+          </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">Manage your profile information, security settings, and view your activity</p>
         </div>
         
@@ -305,55 +385,73 @@ const UserProfile = () => {
               </div>
               
               {/* Navigation Menu */}
-              <div className="p-4">
-                <nav className="space-y-1">
+              <div className="p-5">
+                <nav className="space-y-2">
                   <button
-                    className={`w-full flex items-center px-4 py-3 rounded-lg font-medium transition-all duration-200 ${activeTab === 'profile' ? 'bg-primary-50 text-primary-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                    className={`w-full flex items-center px-4 py-3.5 rounded-xl font-medium transition-all duration-300 ${activeTab === 'profile' 
+                      ? 'bg-gradient-to-r from-primary-50 to-primary-100 text-primary-700 shadow-md border-l-4 border-primary-500' 
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-primary-600 hover:pl-5'}`}
                     onClick={() => setActiveTab('profile')}
                   >
-                    <FaUser className={`mr-3 ${activeTab === 'profile' ? 'text-primary-500' : 'text-gray-400'}`} />
-                    Profile Information
+                    <div className={`mr-3 transition-all duration-300 ${activeTab === 'profile' ? 'text-primary-500 scale-110' : 'text-gray-400'}`}>
+                      <FaUser className="transform transition-transform" />
+                    </div>
+                    <span>Profile Information</span>
                   </button>
                   
                   <button
-                    className={`w-full flex items-center px-4 py-3 rounded-lg font-medium transition-all duration-200 ${activeTab === 'security' ? 'bg-primary-50 text-primary-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                    className={`w-full flex items-center px-4 py-3.5 rounded-xl font-medium transition-all duration-300 ${activeTab === 'security' 
+                      ? 'bg-gradient-to-r from-primary-50 to-primary-100 text-primary-700 shadow-md border-l-4 border-primary-500' 
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-primary-600 hover:pl-5'}`}
                     onClick={() => setActiveTab('security')}
                   >
-                    <FaShieldAlt className={`mr-3 text-primary-500 hidden sm:block`} />
-                    Security
+                    <div className={`mr-3 transition-all duration-300 ${activeTab === 'security' ? 'text-primary-500 scale-110' : 'text-gray-400'}`}>
+                      <FaShieldAlt />
+                    </div>
+                    <span>Security</span>
                   </button>
                   
                   <Link
                     to="/my-inquiries"
-                    className="w-full flex items-center px-4 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
+                    className="w-full flex items-center px-4 py-3.5 rounded-xl font-medium text-gray-600 hover:bg-gray-50 hover:text-primary-600 hover:pl-5 transition-all duration-300"
                   >
-                    <FaQuestionCircle className="mr-3 text-gray-400" />
-                    My Inquiries
+                    <div className="mr-3 text-gray-400 group-hover:text-primary-500">
+                      <FaQuestionCircle />
+                    </div>
+                    <span>My Inquiries</span>
                   </Link>
                   
                   <Link
                     to="/orders"
-                    className="w-full flex items-center px-4 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
+                    className="w-full flex items-center px-4 py-3.5 rounded-xl font-medium text-gray-600 hover:bg-gray-50 hover:text-primary-600 hover:pl-5 transition-all duration-300"
                   >
-                    <FaHistory className="mr-3 text-gray-400" />
-                    Order History
+                    <div className="mr-3 text-gray-400 group-hover:text-primary-500">
+                      <FaHistory />
+                    </div>
+                    <span>Order History</span>
                   </Link>
                   
                   <Link
                     to="/products"
-                    className="w-full flex items-center px-4 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
+                    className="w-full flex items-center px-4 py-3.5 rounded-xl font-medium text-gray-600 hover:bg-gray-50 hover:text-primary-600 hover:pl-5 transition-all duration-300"
                   >
-                    <FaShoppingBag className="mr-3 text-gray-400" />
-                    Browse Products
+                    <div className="mr-3 text-gray-400 group-hover:text-primary-500">
+                      <FaShoppingBag />
+                    </div>
+                    <span>Browse Products</span>
                   </Link>
                   
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center px-4 py-3 rounded-lg font-medium text-red-600 hover:bg-red-50 hover:text-red-700 mt-6 transition-all duration-200"
-                  >
-                    <FaSignOutAlt className="mr-3" />
-                    Sign Out
-                  </button>
+                  <div className="pt-4 mt-4 border-t border-gray-100">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center px-4 py-3.5 rounded-xl font-medium text-red-600 hover:bg-red-50 hover:text-red-700 hover:pl-5 transition-all duration-300 group"
+                    >
+                      <div className="mr-3 group-hover:rotate-12 transition-transform duration-300">
+                        <FaSignOutAlt />
+                      </div>
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
                 </nav>
               </div>
             </div>
@@ -361,27 +459,34 @@ const UserProfile = () => {
           
           {/* Main Content */}
           <div className="lg:col-span-9">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 transform transition-all duration-300 hover:shadow-xl">
+            <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 transform transition-all duration-300 hover:shadow-2xl backdrop-blur-sm bg-white/95">
               {/* Content Header */}
-              <div className="flex justify-between items-center border-b px-6 py-5 bg-gradient-to-r from-gray-50 to-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-gray-50 via-white to-gray-50 gap-3">
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center">
                   {activeTab === 'profile' ? (
                     <>
-                      <FaUser className="mr-3 text-primary-500 hidden sm:block" />
-                      Profile Information
+                      <div className="mr-2 sm:mr-3 text-primary-500 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-primary-50 rounded-full">
+                        <FaUser className="text-lg sm:text-xl" />
+                      </div>
+                      <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-800">Profile Information</span>
                     </>
                   ) : (
                     <>
-                      <FaShieldAlt className="mr-3 text-primary-500 hidden sm:block" />
-                      Security Settings
+                      <div className="mr-2 sm:mr-3 text-primary-500 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-primary-50 rounded-full">
+                        <FaShieldAlt className="text-lg sm:text-xl" />
+                      </div>
+                      <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-800">Security Settings</span>
                     </>
                   )}
                 </h1>
                 {activeTab === 'profile' && !isEditing && (
                   <button
                     type="button"
-                    className="flex items-center text-primary-600 hover:text-primary-700 font-medium bg-primary-50 px-4 py-2 rounded-lg transition-all duration-200 hover:bg-primary-100"
-                    onClick={() => setIsEditing(true)}
+                    className="flex items-center justify-center text-primary-600 hover:text-white font-medium bg-primary-50 hover:bg-primary-600 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md w-full sm:w-auto"
+                    onClick={() => {
+                      setIsEditing(true);
+                      setEditingField(null);
+                    }}
                   >
                     <FaEdit className="mr-2" />
                     Edit Profile
@@ -390,8 +495,11 @@ const UserProfile = () => {
                 {activeTab === 'profile' && isEditing && (
                   <button
                     type="button"
-                    className="text-gray-600 hover:text-gray-800 font-medium bg-gray-100 px-4 py-2 rounded-lg transition-all duration-200 hover:bg-gray-200"
-                    onClick={() => setIsEditing(false)}
+                    className="flex items-center justify-center text-gray-600 hover:text-gray-800 font-medium bg-gray-100 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg transition-all duration-300 hover:bg-gray-200 shadow-sm w-full sm:w-auto"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditingField(null);
+                    }}
                     disabled={isSaving}
                   >
                     Cancel
@@ -427,6 +535,7 @@ const UserProfile = () => {
                             email: profileData.email || '',
                             phone: profileData.phone || '',
                             address: profileData.address || '',
+                            country: profileData.country || '',
                             company_name: profileData.company_name || '',
                             role: profileData.role || 'customer'
                           }}
@@ -449,37 +558,38 @@ const UserProfile = () => {
                                       type="text"
                                       id="name"
                                       name="name"
-                                      className="input pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-all duration-200"
-                                      placeholder="Your full name"
+                                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-sm hover:border-primary-400 transition-all duration-200"
+                                      placeholder="Enter your full name"
                                     />
                                   </div>
-                                  <ErrorMessage name="name" component="div" className="text-red-500 text-sm mt-1 font-medium" />
+                                  <ErrorMessage name="name" component="div" className="mt-1.5 text-sm text-red-500 font-medium" />
                                 </div>
-                                
+
                                 <div>
                                   <label htmlFor="email" className="block text-gray-700 font-medium mb-2 flex items-center">
                                     <FaEnvelope className="text-primary-500 mr-2" />
                                     Email Address
                                   </label>
-                                  <div className="relative group">
+                                  <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                      <FaEnvelope className="text-gray-400 group-hover:text-primary-500 transition-colors" />
+                                      <FaEnvelope className="text-gray-400" />
                                     </div>
                                     <Field
                                       type="email"
                                       id="email"
                                       name="email"
-                                      className="input pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 bg-gray-50 shadow-sm transition-all duration-200"
-                                      placeholder="you@example.com"
+                                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
                                       disabled
                                     />
+                                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                      <FaLock className="text-gray-400" />
+                                    </div>
                                   </div>
-                                  <p className="text-xs text-gray-500 mt-1 flex items-center">
-                                    <FaLock className="mr-1 text-gray-400" />
-                                    Email cannot be changed
-                                  </p>
+                                  <p className="mt-1.5 text-xs text-gray-500 flex items-center">
+  <FaInfoCircle className="mr-1" /> Email cannot be changed
+</p>
                                 </div>
-                                
+
                                 <div>
                                   <label htmlFor="phone" className="block text-gray-700 font-medium mb-2 flex items-center">
                                     <FaPhone className="text-primary-500 mr-2" />
@@ -493,13 +603,13 @@ const UserProfile = () => {
                                       type="text"
                                       id="phone"
                                       name="phone"
-                                      className="input pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-all duration-200"
-                                      placeholder="Your phone number"
+                                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-sm hover:border-primary-400 transition-all duration-200"
+                                      placeholder="Enter your phone number"
                                     />
                                   </div>
-                                  <ErrorMessage name="phone" component="div" className="text-red-500 text-sm mt-1 font-medium" />
+                                  <ErrorMessage name="phone" component="div" className="mt-1.5 text-sm text-red-500 font-medium" />
                                 </div>
-                                
+
                                 <div>
                                   <label htmlFor="address" className="block text-gray-700 font-medium mb-2 flex items-center">
                                     <FaMapMarkerAlt className="text-primary-500 mr-2" />
@@ -513,11 +623,73 @@ const UserProfile = () => {
                                       type="text"
                                       id="address"
                                       name="address"
-                                      className="input pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-all duration-200"
-                                      placeholder="Your address"
+                                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-sm hover:border-primary-400 transition-all duration-200"
+                                      placeholder="Enter your address"
                                     />
                                   </div>
-                                  <ErrorMessage name="address" component="div" className="text-red-500 text-sm mt-1 font-medium" />
+                                  <ErrorMessage name="address" component="div" className="mt-1.5 text-sm text-red-500 font-medium" />
+                                </div>
+                                
+                                <div className="md:col-span-2">
+                                  <label htmlFor="country" className="block text-gray-700 font-medium mb-2 flex items-center">
+                                    <FaGlobe className="text-primary-500 mr-2" />
+                                    Country
+                                  </label>
+                                  <div className="relative group">
+                                    <Field name="country">
+                                      {({ field, form }) => (
+                                        <div className="relative">
+                                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <FaGlobe className="text-gray-400 group-hover:text-primary-500 transition-colors" />
+                                          </div>
+                                          <select
+                                            {...field}
+                                            id="country"
+                                            className="input pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-all duration-200 appearance-none bg-white text-gray-900"
+                                            disabled={editingField === 'phone'}
+                                          >
+                                            <option value="">Select your country</option>
+                                            {countries.map((country, index) => (
+                                              <option key={index} value={country.name} className="py-2 px-3">
+                                                {country.name}
+                                              </option>
+                                            ))}
+                                          </select>
+                                          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                            <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </Field>
+                                  </div>
+                                  <ErrorMessage name="country" component="div" className="text-red-500 text-sm mt-1 font-medium" />
+                                  
+                                  {/* Country Flag Preview with enhanced styling */}
+                                  <Field name="country">
+                                    {({ field }) => field.value && (
+                                      <div className="mt-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-200 flex items-center shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                                        <div className="mr-4 p-2 bg-white rounded-full shadow-sm border border-gray-100">
+                                          <ReactCountryFlag 
+                                            countryCode={countries.find(c => c.name === field.value)?.code || ''} 
+                                            svg 
+                                            style={{ width: '2.5em', height: '2.5em' }} 
+                                            className="rounded-sm"
+                                          />
+                                        </div>
+                                        <div>
+                                          <p className="font-medium text-gray-800 text-lg">{field.value}</p>
+                                          <div className="flex items-center mt-1">
+                                            <span className="text-xs font-medium bg-primary-50 text-primary-700 px-2 py-1 rounded-full">
+                                              {countries.find(c => c.name === field.value)?.code || ''}
+                                            </span>
+                                            <span className="text-xs text-gray-500 ml-2">Country Code</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </Field>
                                 </div>
                                 
                                 {values.role === 'seller' && (
@@ -543,10 +715,10 @@ const UserProfile = () => {
                                 )}
                               </div>
                               
-                              <div className="mt-8 flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0">
+                              <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0">
                                 <button
                                   type="submit"
-                                  className="btn btn-primary py-3 px-6 flex items-center justify-center rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 transform transition-all duration-200 hover:-translate-y-0.5 shadow-md"
+                                  className="btn btn-primary py-2.5 sm:py-3 px-4 sm:px-6 flex items-center justify-center rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 transform transition-all duration-200 hover:-translate-y-0.5 shadow-md w-full sm:w-auto"
                                   disabled={isSubmitting || isSaving}
                                 >
                                   {(isSubmitting || isSaving) ? (
@@ -563,8 +735,11 @@ const UserProfile = () => {
                                 </button>
                                 <button
                                   type="button"
-                                  className="btn py-3 px-6 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center"
-                                  onClick={() => setIsEditing(false)}
+                                  className="btn py-2.5 sm:py-3 px-4 sm:px-6 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center w-full sm:w-auto"
+                                  onClick={() => {
+                      setIsEditing(false);
+                      setEditingField(null);
+                    }}
                                   disabled={isSubmitting || isSaving}
                                 >
                                   Cancel
@@ -575,30 +750,75 @@ const UserProfile = () => {
                         </Formik>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
-                            <h3 className="text-gray-700 font-medium mb-2 flex items-center">
-                              <FaUser className="text-primary-500 mr-2" />
-                              Full Name
-                            </h3>
-                            <p className="text-gray-900 font-medium pl-7">{profileData.name ? profileData.name : 'Not provided'}</p>
-                          </div>
-                          
-                          <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
-                            <h3 className="text-gray-700 font-medium mb-2 flex items-center">
+                          <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
                               <FaEnvelope className="text-primary-500 mr-2" />
                               Email Address
                             </h3>
-                            <p className="text-gray-900 font-medium pl-7">{profileData.email ? profileData.email : 'Not provided'}</p>
+                            <div className="flex flex-col space-y-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between flex-wrap gap-2 sm:gap-3">
+                                <p className="text-gray-900 font-medium break-all text-sm sm:text-base">{profileData.email}</p>
+                                {isEmailVerified ? (
+                                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-green-100 text-green-800 self-start sm:self-auto">
+                                    <FaCheckCircle className="mr-1.5" /> Verified
+                                  </span>
+                                ) : (
+                                  <button 
+                                    onClick={sendVerificationEmail}
+                                    className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-yellow-50 text-yellow-800 hover:bg-yellow-100 transition-colors border border-yellow-200 shadow-sm hover:shadow self-start sm:self-auto"
+                                  >
+                                    <FaExclamationTriangle className="mr-1.5 sm:mr-2" /> 
+                                    Verify Now
+                                  </button>
+                                )}
+                              </div>
+                              {!isEmailVerified && (
+                                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 sm:p-4 rounded-r-lg">
+                                  <div className="flex">
+                                    <div className="flex-shrink-0">
+                                      <FaExclamationTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-800" />
+                                    </div>
+                                    <div className="ml-3">
+                                      <p className="text-xs sm:text-sm text-yellow-800">
+                                        Please verify your email address to access all features and ensure account security.
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          
-                          <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
-                            <h3 className="text-gray-700 font-medium mb-2 flex items-center">
+
+                          <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
                               <FaPhone className="text-primary-500 mr-2" />
                               Phone Number
                             </h3>
-                            <p className="text-gray-900 pl-7">{profileData.phone ? profileData.phone : 
-                              <span className="text-gray-500 italic">Not provided</span>}
-                            </p>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between flex-wrap gap-2 sm:gap-3">
+                              {profileData.phone ? (
+                                <div className="flex items-center space-x-2">
+                                  <span className="bg-gray-100 p-1.5 sm:p-2 rounded-full">
+                                    <FaPhone className="text-gray-600 h-3 w-3 sm:h-4 sm:w-4" />
+                                  </span>
+                                  <span className="text-gray-900 font-medium text-sm sm:text-base">{profileData.phone}</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center text-gray-500">
+                                  <FaPhone className="mr-2 text-gray-400" />
+                                  <span className="italic text-sm sm:text-base">Not provided</span>
+                                </div>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setIsEditing(true);
+                                  setEditingField('phone');
+                                }}
+                                className="text-primary-600 hover:text-primary-700 text-xs sm:text-sm font-medium flex items-center mt-2 sm:mt-0 px-3 py-1.5 sm:px-0 sm:py-0 bg-primary-50 sm:bg-transparent rounded-lg sm:rounded-none self-start sm:self-auto"
+                              >
+                                <FaEdit className="mr-1" />
+                                {profileData.phone ? 'Update' : 'Add Phone'}
+                              </button>
+                            </div>
                           </div>
                           
                           <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
@@ -609,6 +829,34 @@ const UserProfile = () => {
                             <p className="text-gray-900 pl-7">{profileData.address ? profileData.address : 
                               <span className="text-gray-500 italic">Not provided</span>}
                             </p>
+                          </div>
+                          
+                          <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                            <h3 className="text-gray-700 font-medium mb-2 flex items-center">
+                              <FaGlobe className="text-primary-500 mr-2" />
+                              Country
+                            </h3>
+                            <div className="pl-7">
+                              {profileData.country ? (
+                                <div className="flex items-center">
+                                  <div className="mr-3 p-1.5 bg-gray-50 rounded-full border border-gray-200">
+                                    <ReactCountryFlag 
+                                      countryCode={countries.find(c => c.name === profileData.country)?.code || ''} 
+                                      svg 
+                                      style={{ width: '1.5em', height: '1.5em' }} 
+                                    />
+                                  </div>
+                                  <div>
+                                    <p className="text-gray-900 font-medium">{profileData.country}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {countries.find(c => c.name === profileData.country)?.code || ''}
+                                    </p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-gray-500 italic">Not provided</span>
+                              )}
+                            </div>
                           </div>
                           
                           {profileData.role === 'seller' && (

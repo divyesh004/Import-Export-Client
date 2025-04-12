@@ -128,9 +128,10 @@ const RTQForm = ({ isOpen, onClose, product }) => {
       formikSetSubmitting(true);
       
       // Prepare data for backend submission
+      // Removed email and phone number as per requirement
       const quoteRequestData = {
         product_id: product.id,
-        question: `Quote Request for ${product.name} - Quantity: ${values.quantity}\n\nCustomer Details:\nName: ${values.name}\nEmail: ${values.email}\nPhone: ${values.phone}\n\nMessage: ${values.message}\n\nCalculated Price: $${calculatePrice(values.quantity)}`
+        question: `Quote Request for ${product.name} - Quantity: ${values.quantity}\n\nCustomer Details:\nName: ${values.name}\n\nMessage: ${values.message}\n\nCalculated Price: $${calculatePrice(values.quantity)}`
       };
       
       // Send data to the backend

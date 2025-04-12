@@ -2,8 +2,41 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { FaUser, FaEnvelope, FaLock, FaBuilding, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaBuilding, FaPhone, FaMapMarkerAlt, FaGlobe } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import ReactCountryFlag from 'react-country-flag';
+
+// List of countries with ISO codes for dropdown
+const countries = [
+  { name: 'India', code: 'IN' },
+  { name: 'United States', code: 'US' },
+  { name: 'United Kingdom', code: 'GB' },
+  { name: 'Canada', code: 'CA' },
+  { name: 'Australia', code: 'AU' },
+  { name: 'China', code: 'CN' },
+  { name: 'Japan', code: 'JP' },
+  { name: 'Germany', code: 'DE' },
+  { name: 'France', code: 'FR' },
+  { name: 'Brazil', code: 'BR' },
+  { name: 'Russia', code: 'RU' },
+  { name: 'South Africa', code: 'ZA' },
+  { name: 'Mexico', code: 'MX' },
+  { name: 'Italy', code: 'IT' },
+  { name: 'Spain', code: 'ES' },
+  { name: 'South Korea', code: 'KR' },
+  { name: 'Indonesia', code: 'ID' },
+  { name: 'Turkey', code: 'TR' },
+  { name: 'Saudi Arabia', code: 'SA' },
+  { name: 'UAE', code: 'AE' },
+  { name: 'Pakistan', code: 'PK' },
+  { name: 'Bangladesh', code: 'BD' },
+  { name: 'Thailand', code: 'TH' },
+  { name: 'Vietnam', code: 'VN' },
+  { name: 'Malaysia', code: 'MY' },
+  { name: 'Singapore', code: 'SG' },
+  { name: 'Nepal', code: 'NP' },
+  { name: 'Sri Lanka', code: 'LK' }
+];
 
 const Register = () => {
   const [error, setError] = useState('');
@@ -31,6 +64,8 @@ const Register = () => {
       .required('Confirm password is required'),
     phone: Yup.string()
       .matches(/^\+?[1-9]\d{9,14}$/, 'Invalid phone number format'),
+    country: Yup.string()
+      .required('Country is required'),
     company_name: Yup.string()
       .when('role', {
         is: 'seller',
@@ -136,6 +171,7 @@ const Register = () => {
               password: '',
               confirmPassword: '',
               phone: '',
+              country: '',
               company_name: '',
               address: '',
               role: userRole
@@ -205,6 +241,23 @@ const Register = () => {
                         />
                       </div>
                       <ErrorMessage name="password" component="div" className="mt-1 text-red-600 text-sm font-medium" />
+                      
+                      {/* Password Requirements */}
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-gray-500 mb-1">Password must contain:</p>
+                        <div className="flex items-center">
+                          <div className={`w-3 h-3 rounded-full mr-2 ${values.password.length >= 6 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                          <p className={`text-xs ${values.password.length >= 6 ? 'text-green-600' : 'text-red-600'}`}>At least 6 characters</p>
+                        </div>
+                        <div className="flex items-center">
+                          <div className={`w-3 h-3 rounded-full mr-2 ${/[A-Z]/.test(values.password) ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                          <p className={`text-xs ${/[A-Z]/.test(values.password) ? 'text-green-600' : 'text-red-600'}`}>At least one uppercase letter</p>
+                        </div>
+                        <div className="flex items-center">
+                          <div className={`w-3 h-3 rounded-full mr-2 ${/[0-9]/.test(values.password) ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                          <p className={`text-xs ${/[0-9]/.test(values.password) ? 'text-green-600' : 'text-red-600'}`}>At least one number</p>
+                        </div>
+                      </div>
                     </div>
                     
                     {/* Confirm Password */}
@@ -227,7 +280,7 @@ const Register = () => {
                     
                     {/* Phone Number */}
                     <div>
-                      <label htmlFor="phone" className="block text-gray-700 font-medium mb-2 text-sm">Phone Number </label>
+                      <label htmlFor="phone" className="block text-gray-700 font-medium mb-2 text-sm">Phone Number</label>
                       <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <FaPhone className="text-gray-400 group-hover:text-primary-500 transition-colors" />
@@ -241,6 +294,51 @@ const Register = () => {
                         />
                       </div>
                       <ErrorMessage name="phone" component="div" className="mt-1 text-red-600 text-sm font-medium" />
+                    </div>
+                    
+                    {/* Country */}
+                    <div>
+                      <label htmlFor="country" className="block text-gray-700 font-medium mb-2 text-sm">Country</label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <FaGlobe className="text-gray-400 group-hover:text-primary-500 transition-colors" />
+                        </div>
+                        <div className="relative">
+                          <Field
+                            name="country"
+                            id="country"
+                          >
+                            {({ field, form }) => (
+                              <div className="relative">
+                                <select
+                                  {...field}
+                                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 shadow-sm appearance-none"
+                                >
+                                  <option value="">Select your country</option>
+                                  {countries.map((country, index) => (
+                                    <option key={index} value={country.name}>{country.name}</option>
+                                  ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                  <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                                {field.value && (
+                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <ReactCountryFlag 
+                                      countryCode={countries.find(c => c.name === field.value)?.code || ''} 
+                                      svg 
+                                      style={{ width: '1.2em', height: '1.2em', marginRight: '8px' }} 
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </Field>
+                        </div>
+                      </div>
+                      <ErrorMessage name="country" component="div" className="mt-1 text-red-600 text-sm font-medium" />
                     </div>
                     
                     {/* Seller-specific fields */}

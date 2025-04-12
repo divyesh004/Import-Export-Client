@@ -11,7 +11,7 @@ const ProductQuestions = ({ productId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [newQuestion, setNewQuestion] = useState('');
-  const [filterOption, setFilterOption] = useState('all'); // नया स्टेट फ़िल्टर ऑप्शन के लिए
+  const [filterOption, setFilterOption] = useState('all'); // for new state filter option
   const { currentUser, showNotification, toggleLoginPopup } = useAuth();
 
   // Create axios instance

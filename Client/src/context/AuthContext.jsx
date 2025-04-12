@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { API_BASE_URL, getApiConfig } from '../config/env';
+import { useNavigate } from 'react-router-dom';
 
 // Create the auth context
 const AuthContext = createContext();
@@ -16,23 +17,59 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState({ message: '', type: '' });
   const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const navigate = useNavigate();
 
   // Create axios instance with auth header
   const api = axios.create({
     baseURL: API_BASE_URL
   });
   
-  // Add request interceptor to include token in headers
-  api.interceptors.request.use(
-    (config) => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+  // Setup axios interceptors inside useEffect to have access to navigate
+  useEffect(() => {
+    // Add request interceptor to include token in headers
+    const requestInterceptor = api.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+    
+    // Add response interceptor to handle token expiration
+    const responseInterceptor = api.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        // Handle 401 Unauthorized errors (token expired or invalid)
+        if (error.response && error.response.status === 401) {
+          // Clear user data
+          localStorage.removeItem('token');
+          localStorage.removeItem('role');
+          setCurrentUser(null);
+          
+          // Show notification about session expiration
+          setNotification({
+            message: 'Your session has expired. Please login again.',
+            type: 'error'
+          });
+          
+          // Redirect to login page using React Router's navigate
+          if (window.location.pathname !== '/login') {
+            navigate('/login');
+          }
+        }
+        return Promise.reject(error);
       }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+    );
+    
+    // Cleanup interceptors when component unmounts
+    return () => {
+      api.interceptors.request.eject(requestInterceptor);
+      api.interceptors.response.eject(responseInterceptor);
+    };
+  }, [navigate]); // Add navigate as a dependency
 
   // Check if user is already logged in on initial load
   useEffect(() => {
