@@ -145,9 +145,22 @@ export const AuthProvider = ({ children }) => {
   // Reset password
   const resetPassword = async (token, password) => {
     try {
-      const response = await api.post('/auth/reset-password', { token, password });
+      // Make sure token is properly formatted and not undefined
+      if (!token) {
+        throw new Error('Reset token is missing or invalid');
+      }
+      
+      // Log the token for debugging (remove in production)
+      console.log('Using reset token:', token);
+      
+      const response = await api.post('/auth/reset-password', { 
+        token: token, 
+        new_password: password 
+      });
+      
       return response.data;
     } catch (error) {
+      console.error('Reset password error:', error);
       throw error.response?.data || { error: 'Failed to reset password' };
     }
   };

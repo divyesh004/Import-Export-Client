@@ -58,7 +58,7 @@ const RoleBasedRedirect = () => {
   }
   
   // Redirect based on user role
-  if (currentUser.role === 'admin') {
+  if (currentUser.role === 'admin' ||currentUser.role === 'sub-admin') {
     // Redirect admin to admin dashboard
     window.location.href = 'https://import-export-admin-omega.vercel.app/';
     return null;

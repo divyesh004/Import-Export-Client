@@ -163,7 +163,7 @@ const Navbar = () => {
                   <FaClipboardCheck className="mr-1" />
                   <span>Orders</span>
                 </Link>
-                {(currentUser.role === 'admin' || currentUser.role === 'seller') && (
+                {(currentUser.role === 'admin' || currentUser.role === 'seller' || currentUser.role==='sub-admin') && (
                   <Link to="/dashboard" className="text-gray-700 hover:text-primary-600 transition-colors flex items-center">
                     <FaTachometerAlt className="mr-1" />
                     <span>Dashboard</span>

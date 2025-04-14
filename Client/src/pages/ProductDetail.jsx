@@ -653,12 +653,18 @@ const ProductDetail = ({ addToCart }) => {
                   exit={{ opacity: 0, y: -10 }}
                   className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                 >
-                  {Object.entries(product.specifications).map(([key, value]) => (
-                    <div key={key} className="bg-gray-50 p-4 rounded-lg">
-                      <span className="text-gray-600 text-sm block mb-1">{key}</span>
-                      <span className="text-gray-900 font-medium">{value}</span>
+                  {Object.keys(product.specifications).length > 0 ? (
+                    Object.entries(product.specifications).map(([key, value]) => (
+                      <div key={key} className="bg-gray-50 p-4 rounded-lg">
+                        <span className="text-gray-600 text-sm block mb-1">{key}</span>
+                        <span className="text-gray-900 font-medium">{value}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-2 bg-gray-50 p-6 rounded-lg text-center">
+                      <p className="text-gray-500">No specifications available for this product.</p>
                     </div>
-                  ))}
+                  )}
                 </motion.div>
               )}
 
