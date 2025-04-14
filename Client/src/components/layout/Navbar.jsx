@@ -354,7 +354,7 @@ const Navbar = () => {
                   </Link>
                   
                   {/* Dashboard - Only for admin and seller */}
-                  {(currentUser.role === 'admin' || currentUser.role === 'seller') && (
+                  {(currentUser.role === 'admin' || currentUser.role === 'seller' || currentUser.role === 'sub-admin') && (
                     <Link to="/dashboard" className={mobileMenuItemClass}
                       onClick={() => setIsMenuOpen(false)}
                     >
