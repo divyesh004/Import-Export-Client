@@ -66,24 +66,56 @@ const ProductDetail = ({ addToCart }) => {
             features: (() => {
               try {
                 if (!productData.features) return [];
+                
+                // If features is already an array, use it directly
+                if (Array.isArray(productData.features)) {
+                  return productData.features;
+                }
+                
+                // If features is a string, try to parse it
                 if (typeof productData.features === 'string') {
+                  // First try to parse as JSON
                   try {
                     const parsedFeatures = JSON.parse(productData.features);
-                    return Array.isArray(parsedFeatures) ? parsedFeatures : [];
+                    // If parsed result is an array, return it
+                    if (Array.isArray(parsedFeatures)) {
+                      return parsedFeatures;
+                    } 
+                    // If parsed result is an object, convert to array of strings
+                    else if (typeof parsedFeatures === 'object' && parsedFeatures !== null) {
+                      return Object.entries(parsedFeatures).map(([key, value]) => 
+                        `${key}: ${value}`
+                      );
+                    }
                   } catch (parseError) {
                     console.error('Error parsing features JSON:', parseError);
-                    // If JSON parsing fails, try to split by commas or newlines
-                    if (productData.features.includes(',')) {
-                      return productData.features.split(',').map(item => item.trim()).filter(Boolean);
-                    } else if (productData.features.includes('\n')) {
-                      return productData.features.split('\n').map(item => item.trim()).filter(Boolean);
+                    
+                    // If JSON parsing fails, try to split by different delimiters
+                    const text = productData.features.trim();
+                    
+                    // Check for bullet points
+                    if (text.includes('• ')) {
+                      return text.split('• ').filter(Boolean).map(item => item.trim());
+                    }
+                    // Check for numbered list (1. 2. etc)
+                    else if (/\d+\.\s/.test(text)) {
+                      return text.split(/\d+\.\s/).filter(Boolean).map(item => item.trim());
+                    }
+                    // Check for newlines
+                    else if (text.includes('\n')) {
+                      return text.split('\n').filter(Boolean).map(item => item.trim());
+                    }
+                    // Check for commas
+                    else if (text.includes(',')) {
+                      return text.split(',').filter(Boolean).map(item => item.trim());
                     }
                     // If all else fails, return as a single item array
-                    return [productData.features];
+                    return [text];
                   }
                 }
-                return Array.isArray(productData.features) ? productData.features : 
-                       (productData.features ? [productData.features.toString()] : []);
+                
+                // If features is another type, convert to string and return as single item
+                return productData.features ? [productData.features.toString()] : [];
               } catch (e) {
                 console.error('Error processing features:', e);
                 return [];
@@ -92,18 +124,50 @@ const ProductDetail = ({ addToCart }) => {
             specifications: (() => {
               try {
                 if (!productData.specifications) return {};
-                if (typeof productData.specifications === 'string') {
+                
+                // If specifications is already an object, use it directly
+                if (typeof productData.Specifications === 'object' && productData.specifications !== null && !Array.isArray(productData.specifications)) {
+                  return productData.specifications;
+                }
+                
+                // If specifications is a string, try to parse it
+                if (typeof productData.Specifications === 'string') {
                   try {
+                    // First try to parse as JSON
                     const parsedSpecs = JSON.parse(productData.specifications);
-                    return typeof parsedSpecs === 'object' && parsedSpecs !== null ? parsedSpecs : {};
+                    if (typeof parsedSpecs === 'object' && parsedSpecs !== null && !Array.isArray(parsedSpecs)) {
+                      return parsedSpecs;
+                    } else if (Array.isArray(parsedSpecs)) {
+                      // Convert array to object with numbered keys
+                      const specsObject = {};
+                      parsedSpecs.forEach((spec, index) => {
+                        if (typeof spec === 'object' && spec !== null) {
+                          // If array contains objects, merge them
+                          Object.assign(specsObject, spec);
+                        } else {
+                          // If array contains primitives, use indexed keys
+                          specsObject[`Specification ${index + 1}`] = spec.toString();
+                        }
+                      });
+                      return specsObject;
+                    }
                   } catch (parseError) {
                     console.error('Error parsing specifications JSON:', parseError);
+                    
                     // If JSON parsing fails, try to create a simple object
                     const fallbackSpecs = {};
-                    if (productData.specifications.includes(':')) {
-                      // Try to parse as key-value pairs if it contains colons
-                      const lines = productData.specifications.split('\n');
+                    const text = productData.specifications.trim();
+                    
+                    // Try to parse as key-value pairs if it contains colons
+                    if (text.includes(':')) {
+                      // Split by newlines first, then by semicolons if no newlines
+                      const lines = text.includes('\n') ? 
+                        text.split('\n') : 
+                        text.includes(';') ? text.split(';') : [text];
+                      
                       lines.forEach(line => {
+                        if (!line.trim()) return; // Skip empty lines
+                        
                         const parts = line.split(':');
                         if (parts.length >= 2) {
                           const key = parts[0].trim();
@@ -111,13 +175,35 @@ const ProductDetail = ({ addToCart }) => {
                           if (key && value) fallbackSpecs[key] = value;
                         }
                       });
-                      return Object.keys(fallbackSpecs).length > 0 ? fallbackSpecs : { 'Specification': productData.specifications };
+                      
+                      if (Object.keys(fallbackSpecs).length > 0) {
+                        return fallbackSpecs;
+                      }
                     }
-                    return { 'Specification': productData.specifications };
+                    
+                    // If all parsing fails, return as a single specification
+                    return { 'Specification': text };
                   }
                 }
-                return typeof productData.specifications === 'object' && productData.specifications !== null ? 
-                       productData.specifications : {};
+                
+                // If specifications is an array, convert to object
+                if (Array.isArray(productData.specifications)) {
+                  const specsObject = {};
+                  productData.specifications.forEach((spec, index) => {
+                    if (typeof spec === 'object' && spec !== null) {
+                      // If array contains objects, merge them
+                      Object.assign(specsObject, spec);
+                    } else {
+                      // If array contains primitives, use indexed keys
+                      specsObject[`Specification ${index + 1}`] = spec.toString();
+                    }
+                  });
+                  return specsObject;
+                }
+                
+                // If specifications is another type, convert to string and return as single item
+                return productData.specifications ? 
+                  { 'Specification': productData.specifications.toString() } : {};
               } catch (e) {
                 console.error('Error processing specifications:', e);
                 return {};
@@ -651,17 +737,29 @@ const ProductDetail = ({ addToCart }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                  className="space-y-6"
                 >
                   {Object.keys(product.specifications).length > 0 ? (
-                    Object.entries(product.specifications).map(([key, value]) => (
-                      <div key={key} className="bg-gray-50 p-4 rounded-lg">
-                        <span className="text-gray-600 text-sm block mb-1">{key}</span>
-                        <span className="text-gray-900 font-medium">{value}</span>
-                      </div>
-                    ))
+                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                      <table className="w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">Specification</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/3">Details</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {Object.entries(product.specifications).map(([key, value], index) => (
+                            <tr key={key} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              <td className="px-6 py-4 whitespace-normal text-sm font-medium text-gray-900">{key}</td>
+                              <td className="px-6 py-4 whitespace-normal text-sm text-gray-700">{value}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   ) : (
-                    <div className="col-span-2 bg-gray-50 p-6 rounded-lg text-center">
+                    <div className="bg-gray-50 p-6 rounded-lg text-center">
                       <p className="text-gray-500">No specifications available for this product.</p>
                     </div>
                   )}
@@ -674,18 +772,26 @@ const ProductDetail = ({ addToCart }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="space-y-4"
+                  className="space-y-6"
                 >
-                  {product.features.map((feature, index) => (
-                    <div key={index} className="flex items-start">
-                      <div className="flex-shrink-0 h-5 w-5 text-primary-500">
-                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <p className="ml-3 text-gray-700">{feature}</p>
+                  {product.features && product.features.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {product.features.map((feature, index) => (
+                        <div key={index} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex items-start">
+                          <div className="flex-shrink-0 h-8 w-8 bg-primary-100 rounded-full flex items-center justify-center mr-3">
+                            <span className="text-primary-600 font-semibold">{index + 1}</span>
+                          </div>
+                          <div>
+                            <p className="text-gray-800">{feature}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <div className="bg-gray-50 p-6 rounded-lg text-center">
+                      <p className="text-gray-500">No features available for this product.</p>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

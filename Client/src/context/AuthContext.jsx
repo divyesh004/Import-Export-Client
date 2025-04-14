@@ -154,7 +154,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Using reset token:', token);
       
       const response = await api.post('/auth/reset-password', { 
-        token: token, 
+        token, 
         new_password: password 
       });
       
@@ -216,6 +216,38 @@ export const AuthProvider = ({ children }) => {
     setShowLoginPopup(show);
   };
 
+
+  // Verify email with token
+  const verifyEmail = async (token) => {
+    try {
+      const response = await api.post('/auth/verify-email', { token });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Failed to verify email' };
+    }
+  };
+
+  // Resend verification email
+  const resendVerificationEmail = async () => {
+    try {
+      const response = await api.post('/auth/verify-email/resend');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Failed to resend verification email' };
+    }
+  };
+
+  // Check if user's email is verified
+  const checkEmailVerification = async () => {
+    try {
+      const response = await api.get('/auth/profile');
+      return response.data.email_verified || false;
+    } catch (error) {
+      console.error('Failed to check email verification status:', error);
+      return false;
+    }
+  };
+
   const value = {
     currentUser,
     setCurrentUser,
@@ -229,7 +261,10 @@ export const AuthProvider = ({ children }) => {
     showNotification,
     googleLogin,
     showLoginPopup,
-    toggleLoginPopup
+    toggleLoginPopup,
+    verifyEmail,
+    resendVerificationEmail,
+    checkEmailVerification
   };
 
   return (

@@ -21,6 +21,7 @@ import UserProfile from './pages/UserProfile'
 import MyInquiries from './pages/MyInquiries'
 import AuthCallback from './pages/AuthCallback'
 import RTQManagement from './pages/admin/RTQManagement'
+import VerifyEmail from './pages/VerifyEmail'
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -122,6 +123,7 @@ function App() {
           {/* Add a route with token parameter */}
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

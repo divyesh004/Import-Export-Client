@@ -20,7 +20,7 @@ const CustomProductCard = memo(({ product, onRequestQuote, onProductClick }) => 
 
   return (
     <div 
-      className="card group cursor-pointer bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden transform hover:-translate-y-1"
+      className="card group cursor-pointer bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden transform hover:-translate-y-1 h-full flex flex-col"
       onClick={() => onProductClick(product.id)}
     >
       {/* Image Container with Badges */}
@@ -38,7 +38,7 @@ const CustomProductCard = memo(({ product, onRequestQuote, onProductClick }) => 
         </div>
         
         {/* Product Image with Hover Effect */}
-        <div className="w-full h-full bg-gray-50 p-4 flex items-center justify-center overflow-hidden">
+        <div className="w-full h-full bg-gray-50 p-2 xs:p-4 flex items-center justify-center overflow-hidden">
           <img 
             src={product.image} 
             alt={product.name} 
@@ -55,67 +55,70 @@ const CustomProductCard = memo(({ product, onRequestQuote, onProductClick }) => 
         <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
           <div className="flex gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
             <button 
-              className="bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:bg-primary-50 hover:text-primary-600 transition-colors"
+              className="bg-white w-8 h-8 xs:w-9 xs:h-9 rounded-full flex items-center justify-center shadow-md hover:bg-primary-50 hover:text-primary-600 transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 // Add to wishlist functionality would go here
               }}
               aria-label="Add to wishlist"
             >
-              <FaHeart className="text-gray-500 group-hover:text-primary-600" />
+              <FaHeart className="text-gray-500 group-hover:text-primary-600 text-xs xs:text-sm" />
             </button>
             <button 
-              className="bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:bg-primary-50 hover:text-primary-600 transition-colors"
+              className="bg-white w-8 h-8 xs:w-9 xs:h-9 rounded-full flex items-center justify-center shadow-md hover:bg-primary-50 hover:text-primary-600 transition-colors"
               onClick={(e) => handleQuoteClick(e, product)}
               aria-label="Request quote"
             >
-              <FaQuoteRight className="text-gray-500 group-hover:text-primary-600" />
+              <FaQuoteRight className="text-gray-500 group-hover:text-primary-600 text-xs xs:text-sm" />
             </button>
           </div>
         </div>
       </div>
       
       {/* Product Info */}
-      <div className="p-4">
+      <div className="p-2 xs:p-3 sm:p-4 flex-grow flex flex-col justify-between">
         {/* Product Name */}
-        <h3 className="font-medium text-sm sm:text-base text-gray-900 group-hover:text-primary-600 transition-colors cursor-pointer line-clamp-2 mb-1">
-          {product.name}
-        </h3>
-        
-        {/* Rating Stars */}
-        <div className="flex items-center mb-2">
-          <div className="flex text-accent-500">
-            {[...Array(5)].map((_, i) => (
-              <FaStar 
-                key={i} 
-                className={i < Math.floor(rating) ? 'text-accent-500' : 'text-gray-300'}
-                size={12}
-              />
-            ))}
+        <div>
+          <h3 className="font-medium text-xs xs:text-sm sm:text-base text-gray-900 group-hover:text-primary-600 transition-colors cursor-pointer line-clamp-2 mb-1">
+            {product.name}
+          </h3>
+          
+          {/* Rating Stars */}
+          <div className="flex items-center mb-2">
+            <div className="flex text-accent-500">
+              {[...Array(5)].map((_, i) => (
+                <FaStar 
+                  key={i} 
+                  className={i < Math.floor(rating) ? 'text-accent-500' : 'text-gray-300'}
+                  size={10}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-gray-500 ml-1">{rating}</span>
           </div>
-          <span className="text-xs text-gray-500 ml-1">{rating}</span>
         </div>
         
         {/* Price Section */}
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center justify-between mt-auto">
           <div>
             {discountedPrice ? (
-              <div className="flex items-center">
-                <span className="text-accent-600 font-bold text-sm sm:text-base">${discountedPrice}</span>
-                <span className="text-gray-400 text-xs line-through ml-2">${product.price.toFixed(2)}</span>
+              <div className="flex flex-col xs:flex-row xs:items-center">
+                <span className="text-accent-600 font-bold text-xs xs:text-sm sm:text-base">${discountedPrice}</span>
+                <span className="text-gray-400 text-xs line-through xs:ml-2">${product.price.toFixed(2)}</span>
               </div>
             ) : (
-              <span className="text-accent-600 font-bold text-sm sm:text-base">${product.price.toFixed(2)}</span>
+              <span className="text-accent-600 font-bold text-xs xs:text-sm sm:text-base">${product.price.toFixed(2)}</span>
             )}
           </div>
           
           {/* Request Quote Button */}
           <button
             onClick={(e) => handleQuoteClick(e, product)}
-            className="text-primary-600 hover:text-white bg-primary-50 hover:bg-primary-600 font-medium text-xs sm:text-sm px-3 py-1.5 rounded-full transition-colors flex items-center"
+            className="text-primary-600 hover:text-white bg-primary-50 hover:bg-primary-600 font-medium text-xs px-2 xs:px-3 py-1 xs:py-1.5 rounded-full transition-colors flex items-center whitespace-nowrap"
           >
-            <FaQuoteRight className="mr-1" size={12} />
-            Quote
+            <FaQuoteRight className="mr-1" size={10} />
+            <span className="hidden xs:inline">Quote</span>
+            <span className="xs:hidden">Quote</span>
           </button>
         </div>
       </div>
