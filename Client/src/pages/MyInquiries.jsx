@@ -6,6 +6,9 @@ import { useAuth } from '../context/AuthContext';
 import Loading from '../components/common/Loading';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL } from '../config/env';
+import OrderFormModal from '../components/product/OrderFormModal';
+import OrderNowButton from '../components/product/OrderNowButton';
+
 
 const MyInquiries = () => {
   const [inquiries, setInquiries] = useState([]);
@@ -23,6 +26,8 @@ const MyInquiries = () => {
   const [editingInquiry, setEditingInquiry] = useState(null);
   const [editText, setEditText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
   const { currentUser, showNotification, toggleLoginPopup } = useAuth();
@@ -619,6 +624,15 @@ const MyInquiries = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8">  
       <div className="container mx-auto px-2 sm:px-4 max-w-6xl">  
+        {/* Order Form Modal */}
+        {orderModalOpen && selectedQuestion && (
+          <OrderFormModal
+            isOpen={orderModalOpen}
+            onClose={() => setOrderModalOpen(false)}
+            product={productDetails || { id: selectedQuestion.product_id, name: 'Product' }}
+            questionData={selectedQuestion}
+          />
+        )}
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
@@ -871,6 +885,17 @@ const MyInquiries = () => {
                                     </span>
                                   </div>
                                   <p className="text-xs sm:text-sm text-gray-700">{answer.answer}</p>
+                                  
+                                  {/* Order Now Button - Only shown to the question asker when there's a seller reply */}
+                                  <div className="mt-3">
+                                    <OrderNowButton
+                                      isVisible={true} 
+                                      onClick={() => {
+                                        setSelectedQuestion(inquiry);
+                                        setOrderModalOpen(true);
+                                      }} 
+                                    />
+                                  </div>
                                 </motion.div>
                               </div>
                             </motion.div>

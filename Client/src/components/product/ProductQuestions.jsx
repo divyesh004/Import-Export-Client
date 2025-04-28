@@ -5,13 +5,17 @@ import axios from 'axios';
 import { API_BASE_URL } from '../../config/env';
 import { useAuth } from '../../context/AuthContext';
 import Loading from '../common/Loading';
+import OrderNowButton from './OrderNowButton';
+import OrderFormModal from './OrderFormModal';
 
-const ProductQuestions = ({ productId }) => {
+const ProductQuestions = ({ productId, product }) => {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [newQuestion, setNewQuestion] = useState('');
   const [filterOption, setFilterOption] = useState('all'); // for new state filter option
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
   const { currentUser, showNotification, toggleLoginPopup } = useAuth();
 
   // Create axios instance
@@ -224,51 +228,81 @@ const ProductQuestions = ({ productId }) => {
         </div>
       ) : (
         <div className="space-y-4">
-          {getFilteredQuestions().map((question) => (
-            <div 
-              id={`question-${question.id}`}
-              key={question.id} 
-              className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-start">
-                <div className="bg-gray-100 rounded-full p-2 mr-3">
-                  <FaUser className="text-gray-500" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-gray-800">
-                      {question.users?.name || 'Anonymous Fan'}
-                    </span>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <FaCalendarAlt className="mr-1" />
-                      {new Date(question.created_at).toLocaleDateString()}
-                    </div>
+          {getFilteredQuestions().map((question) => {
+            // Check if this question has answers from a seller
+            const hasSellerReplied = question.answers && question.answers.length > 0;
+            
+            // Check if the current user is the one who asked this question
+            const isQuestionAsker = currentUser && question.user_id === currentUser.id;
+            
+            // Only show Order Now button if the user asked the question and a seller has replied
+            const showOrderButton = isQuestionAsker && hasSellerReplied;
+            
+            return (
+              <div 
+                id={`question-${question.id}`}
+                key={question.id} 
+                className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-start">
+                  <div className="bg-gray-100 rounded-full p-2 mr-3">
+                    <FaUser className="text-gray-500" />
                   </div>
-                  <p className="text-gray-700">{question.question}</p>
-                  
-                  {/* Answers section */}
-                  {question.answers && question.answers.length > 0 && (
-                    <div className="mt-3 pl-6 border-l-2 border-primary-200">
-                      {question.answers.map((answer) => (
-                        <div key={answer.id} className="mt-2">
-                          <div className="flex items-center mb-1">
-                            <FaReply className="text-primary-500 mr-2" />
-                            <span className="font-medium text-primary-700">
-                              {answer.users?.name || 'Official Response'}
-                            </span>
-                            <span className="text-xs text-gray-500 ml-2">
-                              {new Date(answer.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <p className="text-gray-600">{answer.answer}</p>
-                        </div>
-                      ))}
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium text-gray-800">
+                        {question.users?.name || 'Anonymous Fan'}
+                      </span>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <FaCalendarAlt className="mr-1" />
+                        {new Date(question.created_at).toLocaleDateString()}
+                      </div>
                     </div>
-                  )}
+                    <p className="text-gray-700">{question.question}</p>
+                    
+                    {/* Answers section */}
+                    {question.answers && question.answers.length > 0 && (
+                      <div className="mt-3 pl-6 border-l-2 border-primary-200">
+                        {question.answers.map((answer) => (
+                          <div key={answer.id} className="mt-2">
+                            <div className="flex items-center mb-1">
+                              <FaReply className="text-primary-500 mr-2" />
+                              <span className="font-medium text-primary-700">
+                                {answer.users?.name || 'Official Response'}
+                              </span>
+                              <span className="text-xs text-gray-500 ml-2">
+                                {new Date(answer.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-gray-600">{answer.answer}</p>
+                          </div>
+                        ))}
+                        
+                        {/* Order Now Button - Only shown to the question asker when there's a seller reply */}
+                        <OrderNowButton 
+                          isVisible={showOrderButton} 
+                          onClick={() => {
+                            setSelectedQuestion(question);
+                            setOrderModalOpen(true);
+                          }} 
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+      )}
+      
+      {/* Order Form Modal */}
+      {orderModalOpen && (
+        <OrderFormModal
+          isOpen={orderModalOpen}
+          onClose={() => setOrderModalOpen(false)}
+          product={product}
+          questionData={selectedQuestion}
+        />
       )}
     </div>
   );
