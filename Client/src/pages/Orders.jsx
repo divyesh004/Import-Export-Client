@@ -1,33 +1,37 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaBoxOpen, FaShoppingBag, FaSpinner, FaExclamationCircle, FaArrowLeft, FaCalendarAlt, FaMapMarkerAlt, FaInfoCircle, FaFileInvoice, FaTruck, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
-import axios from 'axios';
+import { createAuthenticatedApi } from '../utils/authUtils';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config/env';
 import Loading from '../components/common/Loading';
+import ProductFallbackImage from '../components/common/ProductFallbackImage';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { currentUser, showNotification, toggleLoginPopup } = useAuth();
-
-  // Create axios instance with auth header
-  const api = axios.create({
-    baseURL: API_BASE_URL
-  });
+  const navigate = useNavigate();
   
-  // Add request interceptor to include token in headers
-  api.interceptors.request.use(
-    (config) => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+  // Create API instance with authentication handling
+  let api;
+  
+  // Initialize API with authentication handling
+  useEffect(() => {
+    // Create authenticated API instance that handles token expiration
+    api = createAuthenticatedApi(
+      // Token expired callback
+      () => {
+        // Show login popup when token expires
+        toggleLoginPopup(true);
+        // Redirect to home page if on orders page and not logged in
+        navigate('/');
+      },
+      // Show notification function
+      showNotification
+    );
+  }, [toggleLoginPopup, showNotification, navigate]);
 
   // Fetch all orders for the current user
   useEffect(() => {
@@ -100,26 +104,70 @@ const Orders = () => {
                   // Also set image_url for convenience
                   if (order.product_images[0].image_url) {
                     order.product.image_url = order.product_images[0].image_url;
+                    
+                    // Fix relative URLs by prepending API_BASE_URL if needed
+                    if (order.product.image_url && !order.product.image_url.startsWith('http')) {
+                      order.product.image_url = `${API_BASE_URL}${order.product.image_url.startsWith('/') ? '' : '/'}${order.product.image_url}`;
+                    }
                   }
                 } 
                 
                 if (order.image_url) {
                   // If order has direct image_url
                   order.product.image_url = order.image_url;
+                  
+                  // Fix relative URLs by prepending API_BASE_URL if needed
+                  if (order.product.image_url && !order.product.image_url.startsWith('http')) {
+                    order.product.image_url = `${API_BASE_URL}${order.product.image_url.startsWith('/') ? '' : '/'}${order.product.image_url}`;
+                  }
                 } 
                 
                 if (order.products?.imageUrls?.length) {
                   // If order has imageUrls in products object
-                  order.product.imageUrls = order.products.imageUrls;
+                  order.product.imageUrls = order.products.imageUrls.map(url => {
+                    // Fix relative URLs in imageUrls array
+                    if (url && !url.startsWith('http')) {
+                      return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+                    }
+                    return url;
+                  });
+                  
                   // Also set image_url if not already set
-                  if (!order.product.image_url) {
-                    order.product.image_url = order.products.imageUrls[0];
+                  if (!order.product.image_url && order.product.imageUrls[0]) {
+                    order.product.image_url = order.product.imageUrls[0];
                   }
                 }
                 
                 if (order.products?.image_url) {
                   // If products has a direct image_url
                   order.product.image_url = order.products.image_url;
+                  
+                  // Fix relative URLs by prepending API_BASE_URL if needed
+                  if (order.product.image_url && !order.product.image_url.startsWith('http')) {
+                    order.product.image_url = `${API_BASE_URL}${order.product.image_url.startsWith('/') ? '' : '/'}${order.product.image_url}`;
+                  }
+                }
+              } else {
+                // Fix existing image URLs if they are relative
+                if (order.product.image_url && !order.product.image_url.startsWith('http')) {
+                  order.product.image_url = `${API_BASE_URL}${order.product.image_url.startsWith('/') ? '' : '/'}${order.product.image_url}`;
+                }
+                
+                if (order.product.imageUrls && Array.isArray(order.product.imageUrls)) {
+                  order.product.imageUrls = order.product.imageUrls.map(url => {
+                    if (url && !url.startsWith('http')) {
+                      return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+                    }
+                    return url;
+                  });
+                }
+                
+                if (order.product.product_images && Array.isArray(order.product.product_images)) {
+                  order.product.product_images.forEach(img => {
+                    if (img.image_url && !img.image_url.startsWith('http')) {
+                      img.image_url = `${API_BASE_URL}${img.image_url.startsWith('/') ? '' : '/'}${img.image_url}`;
+                    }
+                  });
                 }
               }
               
@@ -318,15 +366,20 @@ const Orders = () => {
                         order.products?.imageUrls?.[0],
                         order.image_url,
                         order.product_images?.[0]?.image_url,
-                        // Add more potential sources if needed
                         order.products?.image_url,
                         order.products?.product_images?.[0]?.image_url
                       ];
                       
                       // Find the first valid image source
-                      const imageUrl = imageSources.find(src => src && typeof src === 'string');
+                      let imageUrl = imageSources.find(src => src && typeof src === 'string');
                       
-                      // Debug image sources
+                      // Fix relative URLs by prepending API_BASE_URL
+                      if (imageUrl && !imageUrl.startsWith('http')) {
+                        // If URL is relative, prepend API_BASE_URL
+                        imageUrl = `${API_BASE_URL}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+                      }
+                      
+                      // Debug image sources with more details
                       console.log('Order ID:', order.id, 'Image sources:', {
                         product_image_url: order.product?.image_url,
                         product_imageUrls: order.product?.imageUrls,
@@ -334,8 +387,12 @@ const Orders = () => {
                         products_imageUrls: order.products?.imageUrls,
                         direct_image_url: order.image_url,
                         product_images: order.product_images,
-                        selected_image: imageUrl
+                        selected_image: imageUrl,
+                        api_base_url: API_BASE_URL
                       });
+                      
+                      // Log the final image URL for debugging
+                      console.log('Final image URL being used:', imageUrl);
                       
                       return imageUrl ? (
                         <img 
@@ -343,21 +400,12 @@ const Orders = () => {
                           alt={order.products?.name || order.product?.name || order.product_name || 'Product Image'} 
                           className="max-w-full max-h-full object-contain"
                           onLoad={() => console.log('Image loaded successfully:', imageUrl)}
-                          onError={(e) => {
-                            console.error('Image failed to load:', e.target.src);
-                            // Try to fix common URL issues
-                            if (e.target.src.startsWith('http://localhost') && !e.target.src.includes('/uploads/')) {
-                              console.log('Attempting to fix local URL by adding /uploads/ path');
-                              e.target.src = e.target.src.replace('http://localhost:8080', 'http://localhost:8080/uploads');
-                              return;
-                            }
-                            // If URL fixing didn't work or isn't applicable, use fallback
-                            e.target.onerror = null;
-                            e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
+                          onError={() => {
+                            console.error('Image failed to load:', imageUrl);
                           }}
                         />
                       ) : (
-                        <FaBoxOpen className="text-gray-400 text-2xl" />
+                        <ProductFallbackImage />
                       );
                     })()}
                   </div>

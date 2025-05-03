@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useAuth } from './context/AuthContext'
 import LoginPopup from './components/common/LoginPopup'
+import ScrollToTop from './components/common/ScrollToTop'
 
 // Layouts
 import Navbar from './components/layout/Navbar'
@@ -85,6 +86,9 @@ function App() {
         isOpen={showLoginPopup} 
         onClose={() => toggleLoginPopup(false)} 
       />
+      
+      {/* ScrollToTop component for smooth scrolling */}
+      <ScrollToTop />
       
       <main className="flex-grow">
         <Routes>

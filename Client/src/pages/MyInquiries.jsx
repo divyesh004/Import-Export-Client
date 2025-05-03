@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
 import { FaUser, FaCalendarAlt, FaReply, FaQuestionCircle, FaArrowLeft, FaSpinner, FaPaperPlane, FaCheck, FaClock, FaFilter, FaSort, FaShoppingBag, FaTimes, FaCheckDouble, FaEllipsisH, FaEdit, FaTrash, FaSave } from 'react-icons/fa';
-import axios from 'axios';
+import { createAuthenticatedApi } from '../utils/authUtils';
 import { useAuth } from '../context/AuthContext';
 import Loading from '../components/common/Loading';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,22 +35,24 @@ const MyInquiries = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Create axios instance outside of component to prevent recreation on each render
-  const api = axios.create({
-    baseURL: API_BASE_URL
-  });
+  // Create API instance with authentication handling
+  let api;
   
-  // Add request interceptor to include token in headers
-  api.interceptors.request.use(
-    (config) => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+  // Initialize API with authentication handling
+  useEffect(() => {
+    // Create authenticated API instance that handles token expiration
+    api = createAuthenticatedApi(
+      // Token expired callback
+      () => {
+        // Show login popup when token expires
+        toggleLoginPopup(true);
+        // Redirect to home page if on protected page and not logged in
+        navigate('/');
+      },
+      // Show notification function
+      showNotification
+    );
+  }, [toggleLoginPopup, showNotification, navigate]);
 
   // Check for product_id in URL query params
   useEffect(() => {

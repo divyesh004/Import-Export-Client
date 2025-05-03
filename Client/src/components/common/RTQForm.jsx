@@ -17,6 +17,7 @@ const RTQForm = ({ isOpen, onClose, product }) => {
   const [submitting, setSubmitting] = useState(false);
   const [calculatedPrice, setCalculatedPrice] = useState(product?.price || 0);
   const [hasInquired, setHasInquired] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   // Create axios instance with auth header
   const api = axios.create({
@@ -91,6 +92,18 @@ const RTQForm = ({ isOpen, onClose, product }) => {
       setCalculatedPrice(product.price);
     }
   }, [product]);
+  
+  // Handle window resize to update mobile state
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   // Form validation schema
   const rtqSchema = Yup.object().shape({
@@ -105,11 +118,13 @@ const RTQForm = ({ isOpen, onClose, product }) => {
       .matches(/^[0-9+\-\s()]+$/, 'Please enter a valid phone number')
       .min(10, 'Phone number is too short (minimum 10 characters)')
       .required('Phone number is required'),
-    quantity: Yup.number()
+    quantity: Yup.string()
       .required('Quantity is required')
-      .positive('Quantity must be positive')
-      .integer('Quantity must be a whole number')
-      .min(1, 'Minimum quantity is 1'),
+      .test('is-not-zero', 'Quantity cannot be zero', value => value !== '0')
+      .test('is-positive-integer', 'Quantity must be a positive whole number', value => {
+        const num = parseInt(value);
+        return !isNaN(num) && num > 0 && Number.isInteger(num);
+      }),
     message: Yup.string()
       .min(10, 'Please provide more details about your requirements')
       .max(500, 'Message is too long (maximum 500 characters)')
@@ -119,7 +134,9 @@ const RTQForm = ({ isOpen, onClose, product }) => {
   // Calculate price based on quantity
   const calculatePrice = (quantity) => {
     if (!product) return 0;
-    const price = product.price * quantity;
+    const numQuantity = parseInt(quantity);
+    if (isNaN(numQuantity) || numQuantity <= 0) return 0;
+    const price = product.price * numQuantity;
     setCalculatedPrice(price);
     return price.toFixed(2);
   };
@@ -376,7 +393,7 @@ const RTQForm = ({ isOpen, onClose, product }) => {
                       <FaBox className="text-gray-400 text-base" />
                     </div>
                     <Field
-                      type="number"
+                      type={isMobile ? "text" : "number"}
                       name="quantity"
                       id="quantity"
                       min="1"
@@ -384,13 +401,14 @@ const RTQForm = ({ isOpen, onClose, product }) => {
                       placeholder="Quantity"
                       aria-required="true"
                       onChange={(e) => {
-                        const value = parseInt(e.target.value) || 1;
+                        const value = e.target.value;
                         setFieldValue('quantity', value);
                         calculatePrice(value);
                       }}
                     />
                   </div>
                   <ErrorMessage name="quantity" component="div" className="mt-1.5 text-red-600 text-sm font-medium" role="alert" />
+                  <p className="mt-1 text-gray-500 text-xs">Please enter a positive whole number. Quantity cannot be zero.</p>
                 </div>
               </div>
               
@@ -446,4 +464,4 @@ const RTQForm = ({ isOpen, onClose, product }) => {
   );
 };
 
-export default RTQForm;
+export default RTQForm

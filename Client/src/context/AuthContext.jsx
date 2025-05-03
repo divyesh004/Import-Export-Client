@@ -55,8 +55,14 @@ export const AuthProvider = ({ children }) => {
             type: 'error'
           });
           
-          // Redirect to login page using React Router's navigate
-          if (window.location.pathname !== '/login') {
+          // Show login popup instead of redirecting
+          setShowLoginPopup(true);
+          
+          // Only redirect to login page if we're on a protected route that requires full authentication
+          const protectedRoutes = ['/dashboard', '/profile', '/orders', '/my-inquiries'];
+          const currentPath = window.location.pathname;
+          
+          if (protectedRoutes.some(route => currentPath.startsWith(route))) {
             navigate('/login');
           }
         }

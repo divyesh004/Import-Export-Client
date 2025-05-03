@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaUser, FaCalendarAlt, FaReply, FaQuestionCircle } from 'react-icons/fa';
-import axios from 'axios';
+import { createAuthenticatedApi } from '../../utils/authUtils';
 import { API_BASE_URL } from '../../config/env';
 import { useAuth } from '../../context/AuthContext';
 import Loading from '../common/Loading';
@@ -18,22 +18,24 @@ const ProductQuestions = ({ productId, product }) => {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const { currentUser, showNotification, toggleLoginPopup } = useAuth();
 
-  // Create axios instance
-  const api = axios.create({
-    baseURL: API_BASE_URL
-  });
+  const navigate = useNavigate();
   
-  // Add request interceptor to include token in headers
-  api.interceptors.request.use(
-    (config) => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+  // Create API instance with authentication handling
+  let api;
+  
+  // Initialize API with authentication handling
+  useEffect(() => {
+    // Create authenticated API instance that handles token expiration
+    api = createAuthenticatedApi(
+      // Token expired callback
+      () => {
+        // Show login popup when token expires
+        toggleLoginPopup(true);
+      },
+      // Show notification function
+      showNotification
+    );
+  }, [toggleLoginPopup, showNotification]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
