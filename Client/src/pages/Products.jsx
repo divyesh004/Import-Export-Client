@@ -113,6 +113,9 @@ const Products = () => {
   const { showNotification, toggleLoginPopup } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Flag to determine whether to show category filter section
+  const [showCategoryFilter, setShowCategoryFilter] = useState(true);
 
   
   // Initialize API with authentication handling
@@ -223,7 +226,7 @@ const Products = () => {
         setError('No products found. Our catalog might be updating.');
       }
     } catch (err) {
-      console.error('Error fetching products:', err);
+      
       // More user-friendly product loading error messages
       let errorMessage = 'Unable to load products at this time. Please try again later.';
       
@@ -268,11 +271,20 @@ const Products = () => {
     // Set category from URL if present
     if (categoryParam) {
       setSelectedCategory(categoryParam);
+      // Show filter section only when directly viewing products by category
+      setShowCategoryFilter(false);
     }
     
     // Set industry from URL if present
     if (industryParam) {
       setSelectedCategory(industryParam);
+      // Hide filter section when viewing industry products
+      setShowCategoryFilter(false);
+    }
+    
+    // If no category or industry parameter, show filter section
+    if (!categoryParam && !industryParam) {
+      setShowCategoryFilter(true);
     }
     
     // Reset pagination when URL changes
@@ -468,9 +480,16 @@ const Products = () => {
   
   // Memoize handlers to prevent recreation on each render
   const handleRequestQuote = useCallback((product) => {
+    // Check if user is admin or seller
+    const userRole = localStorage.getItem('role');
+    if (userRole === 'admin' || userRole === 'seller') {
+      showNotification('Admin and seller accounts cannot submit quote requests. Please use a customer account.', 'error');
+      return;
+    }
+    
     setSelectedProduct(product);
     setRtqModalOpen(true);
-  }, []);
+  }, [showNotification]);
   
   // Memoize product click handler
   const handleProductClick = useCallback((productId) => {
@@ -568,51 +587,55 @@ const Products = () => {
     );
   }
   
-  // Check if industry parameter exists in URL
+  // Check if industry or category parameter exists in URL
   const params = new URLSearchParams(location.search);
   const industryParam = params.get('industry');
-  const showOnlyCategories = !!industryParam;
+  const categoryParam = params.get('category');
+  // This line was causing issues - we already have a state variable for this
+  // const showCategoryFilter = !industryParam && !categoryParam;
   
   return (
     <div className="flex flex-col bg-gray-50 min-h-screen">
-      {/* Fixed Category Bar - For desktop and mobile */}
-      <div className="sticky top-0 left-0 right-0 z-30 bg-white shadow-md w-full">
-        <div className="w-full overflow-x-auto py-3 px-1 sm:px-2 md:px-4 max-w-screen-2xl mx-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
-          <style jsx>{`
-            .category-scroll::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-          <div className="flex space-x-3 sm:space-x-4 md:space-x-5 w-full category-scroll sm:justify-start md:justify-center" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingLeft: '0.5rem', paddingRight: '0.5rem', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', display: 'flex', flexWrap: 'nowrap' }}>
-            {visibleCategories.map((category) => (
-              <div 
-                key={category.id}
-                onClick={() => {
-                  setSelectedCategory(category.name);
-                  window.scrollTo(0, 0);
-                  // Close mobile filter if open
-                  if (isFilterOpen) setIsFilterOpen(false);
-                }}
-                className={`flex flex-col items-center justify-center p-1 sm:p-1.5 md:p-2 cursor-pointer transition-colors flex-shrink-0 ${selectedCategory === category.name ? 'opacity-100' : 'opacity-80'}`}
-                style={{ scrollSnapAlign: 'center', minWidth: '70px', maxWidth: '90px' }}
-              >
+      {/* Fixed Category Bar - For desktop and mobile - Only show when no industry or category is selected */}
+      {showCategoryFilter && (
+        <div className="sticky top-0 left-0 right-0 z-30 bg-white shadow-md w-full">
+          <div className="w-full overflow-x-auto py-3 px-1 sm:px-2 md:px-4 max-w-screen-2xl mx-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+            <style jsx>{`
+              .category-scroll::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
+            <div className="flex space-x-3 sm:space-x-4 md:space-x-5 w-full category-scroll sm:justify-start md:justify-center" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingLeft: '0.5rem', paddingRight: '0.5rem', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', display: 'flex', flexWrap: 'nowrap' }}>
+              {visibleCategories.map((category) => (
                 <div 
-                  className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center mb-1 shadow-sm transition-all duration-200 ${selectedCategory === category.name ? 'border-2 border-blue-500 scale-110' : 'border border-gray-100'}`}
-                  style={{ backgroundColor: `${category.color}15` }}
+                  key={category.id}
+                  onClick={() => {
+                    setSelectedCategory(category.name);
+                    window.scrollTo(0, 0);
+                    // Close mobile filter if open
+                    if (isFilterOpen) setIsFilterOpen(false);
+                  }}
+                  className={`flex flex-col items-center justify-center p-1 sm:p-1.5 md:p-2 cursor-pointer transition-colors flex-shrink-0 ${selectedCategory === category.name ? 'opacity-100' : 'opacity-80'}`}
+                  style={{ scrollSnapAlign: 'center', minWidth: '70px', maxWidth: '90px' }}
                 >
-                  <category.icon className="text-sm sm:text-base md:text-lg" style={{ color: category.color }} />
+                  <div 
+                    className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center mb-1 shadow-sm transition-all duration-200 ${selectedCategory === category.name ? 'border-2 border-blue-500 scale-110' : 'border border-gray-100'}`}
+                    style={{ backgroundColor: `${category.color}15` }}
+                  >
+                    <category.icon className="text-sm sm:text-base md:text-lg" style={{ color: category.color }} />
+                  </div>
+                  <span className={`text-[8px] sm:text-[10px] md:text-xs mt-1 whitespace-nowrap font-medium text-center transition-colors duration-200 ${selectedCategory === category.name ? 'text-blue-600' : 'text-gray-700'}`}>{category.name}</span>
                 </div>
-                <span className={`text-[8px] sm:text-[10px] md:text-xs mt-1 whitespace-nowrap font-medium text-center transition-colors duration-200 ${selectedCategory === category.name ? 'text-blue-600' : 'text-gray-700'}`}>{category.name}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
       
       {/* Display CategoryList only when industry is selected */}
       {industryParam && <CategoryList />}
       
-      {!showOnlyCategories && (
+      {showCategoryFilter && (
       <div className="flex flex-1 relative">
         {/* Price Filter Sidebar - For desktop */}
         <div className="hidden md:block w-64 bg-white shadow-md sticky top-24 h-fit z-20">
@@ -666,16 +689,16 @@ const Products = () => {
         <div className="flex-1 px-2 sm:px-4 py-4">
           {/* Mobile Filter and Search Bar */}
           <div className="md:hidden flex flex-col gap-3 mb-4">
-                
-            
             <div className="flex justify-between items-center">
-              <button 
-                className="flex items-center space-x-2 bg-white shadow-sm px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors border border-gray-200"
-                onClick={(e) => handleDropdownToggle(e, setIsFilterOpen, isFilterOpen)}
-              >
-                <FaFilter className="mr-2" />
-                <span>Filter</span>
-              </button>
+              {showCategoryFilter && (
+                <button 
+                  className="flex items-center space-x-2 bg-white shadow-sm px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors border border-gray-200"
+                  onClick={(e) => handleDropdownToggle(e, setIsFilterOpen, isFilterOpen)}
+                >
+                  <FaFilter className="mr-2" />
+                  <span>Filter</span>
+                </button>
+              )}
               
               <div className="flex items-center bg-white shadow-sm rounded-lg p-1 border border-gray-200">
                 <button
@@ -761,7 +784,7 @@ const Products = () => {
         </div>
                 
         <AnimatePresence>
-          {isFilterOpen && (
+          {isFilterOpen && showCategoryFilter && (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

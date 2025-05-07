@@ -19,21 +19,47 @@ const MyCustomProductRequests = () => {
   useEffect(() => {
     // Create authenticated API instance that handles token expiration
     api = createAuthenticatedApi(
-      // Token expired callback
-      () => {
+      // Token expired callback with role-based redirection
+      (userRole) => {
         // Show login popup when token expires
         toggleLoginPopup(true);
+        
+        // Redirect based on previous user role
+        if (userRole === 'admin') {
+          // Admin will be redirected to admin dashboard when they log in again
+          window.location.href = '/';
+        } else if (userRole === 'seller') {
+          // Seller will be redirected to seller dashboard when they log in again
+          window.location.href = '/';
+        } else {
+          // Regular users are redirected to home page
+          window.location.href = '/';
+        }
       },
       // Show notification function
       showNotification
     );
   }, [toggleLoginPopup, showNotification]);
+  
+  // Check if token exists on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showNotification('Please login to access this page', 'error');
+      toggleLoginPopup(true);
+      window.location.href = '/';
+    }
+  }, [showNotification, toggleLoginPopup]);
 
   // Fetch all custom product requests for the current user
   useEffect(() => {
     const fetchUserRequests = async () => {
       if (!currentUser) {
         setLoading(false);
+        // Redirect to home if no current user
+        showNotification('Please login to access this page', 'error');
+        toggleLoginPopup(true);
+        window.location.href = '/';
         return;
       }
       
@@ -49,6 +75,8 @@ const MyCustomProductRequests = () => {
             () => {
               // Show login popup when token expires
               toggleLoginPopup(true);
+              // Redirect to home page
+              window.location.href = '/';
             },
             // Show notification function
             showNotification
@@ -62,6 +90,8 @@ const MyCustomProductRequests = () => {
           showNotification('Please login to view your product requests', 'error');
           toggleLoginPopup(true);
           setLoading(false);
+          // Redirect to home page if no token
+          window.location.href = '/';
           return;
         }
         

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { FaLock, FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
@@ -15,6 +15,7 @@ const ResetPassword = () => {
   const { resetPassword, showNotification } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const params = useParams(); // Get URL parameters using useParams hook
 
   // Extract token from URL on component mount
   useEffect(() => {
@@ -23,54 +24,93 @@ const ResetPassword = () => {
     setSuccess('');
     
     try {
+      // Check if there are error parameters in the URL
+      const searchParams = new URLSearchParams(location.search);
+      const errorParam = searchParams.get('error');
+      const errorCode = searchParams.get('error_code');
+      const errorDescription = searchParams.get('error_description');
+      
+      // If there are error parameters, show appropriate error message
+      if (errorParam === 'access_denied' || errorCode === 'otp_expired') {
+        const errorMsg = errorDescription 
+          ? decodeURIComponent(errorDescription.replace(/\+/g, ' ')) 
+          : 'Your password reset link has expired or is invalid.';
+        throw new Error(errorMsg);
+      }
+      
       // Check all possible token locations
       let resetToken = null;
       
-      // 1. Check URL query parameters
-      const searchParams = new URLSearchParams(location.search);
-      resetToken = searchParams.get('token') || searchParams.get('type');
+      // 1. Check URL params from React Router (for routes like /reset-password/:token)
+      // This is the most reliable method when using React Router
+      if (params.token && params.token.length > 10) {
+        resetToken = params.token;
+      }
       
-      // 2. Check URL path parameter
+      // 2. Check URL query parameters (most common format: /reset-password?token=xyz)
+      if (!resetToken) {
+        resetToken = searchParams.get('token') || searchParams.get('reset');
+      }
+      
+      // 3. Check URL path parameter (format: /reset-password/xyz)
       if (!resetToken) {
         const pathSegments = location.pathname.split('/');
-        if (pathSegments.length > 2 && pathSegments[1] === 'reset-password') {
-          const tokenFromPath = pathSegments[pathSegments.length - 1];
-          if (tokenFromPath !== 'reset-password') {
-            resetToken = tokenFromPath;
+        if (pathSegments.length > 2) {
+          // Get the last segment of the path
+          const lastSegment = pathSegments[pathSegments.length - 1];
+          // Make sure it's not just 'reset-password' and has a reasonable token length
+          if (lastSegment !== 'reset-password' && lastSegment.length > 10) {
+            resetToken = lastSegment;
           }
         }
       }
       
-      // 3. Check URL hash fragment
+      // 4. Check URL hash fragment (format: /reset-password#token=xyz)
       if (!resetToken) {
-        const hash = location.hash.substring(1);
-        const hashParams = new URLSearchParams(hash);
-        resetToken = hashParams.get('token');
+        if (location.hash && location.hash.length > 1) {
+          const hash = location.hash.substring(1);
+          // Check if hash contains a token parameter
+          if (hash.includes('token=')) {
+            const hashParams = new URLSearchParams(hash);
+            resetToken = hashParams.get('token');
+          } else if (hash.length > 10) {
+            // If hash is just the token itself (format: /reset-password#xyz)
+            resetToken = hash;
+          }
+        }
       }
       
-      // Set token if found
-      if (resetToken) {
+      // 5. Check if token is in the state from a previous navigation
+      if (!resetToken && location.state && location.state.token) {
+        resetToken = location.state.token;
+      }
+      
+      // Set token if found and validate it has a reasonable length
+      if (resetToken && resetToken.length > 10) {
+        console.log('Reset token found:', resetToken);
         setToken(resetToken);
       } else {
-        throw new Error('पासवर्ड रीसेट टोकन नहीं मिला। कृपया नया पासवर्ड रीसेट लिंक अनुरोध करें।');
+        console.error('Token not found or invalid length:', resetToken);
+        throw new Error('Password reset token not found. Please request a new password reset link.');
       }
     } catch (err) {
-      setError(err.message || 'अमान्य या अनुपलब्ध रीसेट टोकन। कृपया नया पासवर्ड रीसेट लिंक अनुरोध करें।');
+      console.error('Error extracting token:', err);
+      setError(err.message || 'Invalid or unavailable reset token. Please request a new password reset link.');
     }
-  }, [location]);
+  }, [location, params]);
 
   // Reset password validation schema
   const resetPasswordSchema = Yup.object().shape({
     password: Yup.string()
-      .min(8, 'पासवर्ड कम से कम 8 अक्षर का होना चाहिए')
-      .matches(/[A-Z]/, 'पासवर्ड में कम से कम एक अपरकेस अक्षर होना चाहिए')
-      .matches(/[a-z]/, 'पासवर्ड में कम से कम एक लोअरकेस अक्षर होना चाहिए')
-      .matches(/[0-9]/, 'पासवर्ड में कम से कम एक नंबर होना चाहिए')
-      .matches(/[^\w\s]/, 'पासवर्ड में कम से कम एक विशेष वर्ण होना चाहिए')
-      .required('पासवर्ड आवश्यक है'),
+      .min(8, 'Password must be at least 8 characters')
+      .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
+      .matches(/[0-9]/, 'Password must contain at least one number')
+      .matches(/[^\w\s]/, 'Password must contain at least one special character')
+      .required('Password is required'),
     confirmPassword: Yup.string()
-      .oneOf([Yup.ref('password'), null], 'पासवर्ड मेल नहीं खाते')
-      .required('पासवर्ड की पुष्टि आवश्यक है')
+      .oneOf([Yup.ref('password'), null], 'Passwords do not match')
+      .required('Password confirmation is required')
   });
 
   // Toggle password visibility
@@ -91,29 +131,34 @@ const ResetPassword = () => {
       setIsLoading(true);
       
       if (!token) {
-        throw new Error('अमान्य या अनुपलब्ध रीसेट टोकन');
+        throw new Error('Invalid or unavailable reset token');
       }
       
       await resetPassword(token, values.password);
       
-      setSuccess('आपका पासवर्ड सफलतापूर्वक रीसेट कर दिया गया है!');
-      showNotification('पासवर्ड रीसेट सफल!', 'success');
+      setSuccess('Your password has been successfully reset!');
+      showNotification('Password reset successful!', 'success');
       
       // Redirect to login page after 3 seconds
       setTimeout(() => {
         navigate('/login');
       }, 3000);
     } catch (err) {
-      // User-friendly password reset error messages in Hindi
-      let errorMessage = 'इस समय आपका पासवर्ड रीसेट करने में असमर्थ। कृपया पुनः प्रयास करें।';
+      // User-friendly password reset error messages
+      let errorMessage = 'Unable to reset your password at this time. Please try again.';
       
       if (err.error) {
-        if (err.error.includes('token') || err.error.includes('expired')) {
-          errorMessage = 'आपका पासवर्ड रीसेट लिंक समाप्त हो गया है या अमान्य है। कृपया नया अनुरोध करें।';
+        if (err.error.includes('token') || err.error.includes('expired') || err.error.includes('invalid')) {
+          errorMessage = 'Your password reset link has expired or is invalid. Please request a new one.';
         } else if (err.error.includes('password')) {
-          errorMessage = 'आपका नया पासवर्ड आवश्यकताओं को पूरा नहीं करता है। कृपया एक मजबूत पासवर्ड चुनें।';
+          errorMessage = 'Your new password does not meet the requirements. Please choose a strong password.';
         }
+      } else if (err.message) {
+        // Use the error message directly if available
+        errorMessage = err.message;
       }
+      
+      console.error('Password reset failed:', err);
       setError(errorMessage);
       showNotification(errorMessage, 'error');
     } finally {
@@ -126,9 +171,9 @@ const ResetPassword = () => {
     <div className="py-12 bg-gray-50 min-h-screen">
       <div className="container max-w-md mx-auto px-4">
         <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-2xl font-bold text-center text-gray-900 mb-4">अपना पासवर्ड रीसेट करें</h1>
+          <h1 className="text-2xl font-bold text-center text-gray-900 mb-4">Reset Your Password</h1>
           <p className="text-center text-gray-600 mb-8">
-            अपने अकाउंट के लिए एक नया पासवर्ड बनाएं।
+            Create a new password for your account.
           </p>
           
           {error && (
@@ -143,7 +188,7 @@ const ResetPassword = () => {
           {success && (
             <div className="bg-green-50 border-l-4 border-green-500 text-green-800 p-4 mb-6 rounded-md">
               <p>{success}</p>
-              <p className="mt-2 text-sm">लॉगिन पेज पर रीडायरेक्ट कर रहे हैं...</p>
+              <p className="mt-2 text-sm">Redirecting to login page...</p>
             </div>
           )}
           
@@ -156,7 +201,7 @@ const ResetPassword = () => {
               {({ isSubmitting }) => (
                 <Form>
                   <div className="mb-4">
-                    <label htmlFor="password" className="block text-gray-700 font-medium mb-2">नया पासवर्ड</label>
+                    <label htmlFor="password" className="block text-gray-700 font-medium mb-2">New Password</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <FaLock className="text-gray-400" />
@@ -166,7 +211,7 @@ const ResetPassword = () => {
                         name="password"
                         id="password"
                         className="pl-10 pr-10 w-full p-3 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                        placeholder="नया पासवर्ड दर्ज करें"
+                        placeholder="Enter new password"
                       />
                       <button
                         type="button"
@@ -177,11 +222,11 @@ const ResetPassword = () => {
                       </button>
                     </div>
                     <ErrorMessage name="password" component="div" className="mt-1 text-red-600 text-sm" />
-                    <p className="mt-1 text-xs text-gray-500">पासवर्ड में कम से कम 8 अक्षर, एक अपरकेस, एक लोअरकेस, एक नंबर और एक विशेष वर्ण होना चाहिए।</p>
+                    <p className="mt-1 text-xs text-gray-500">Password must contain at least 8 characters, one uppercase, one lowercase, one number, and one special character.</p>
                   </div>
                   
                   <div className="mb-6">
-                    <label htmlFor="confirmPassword" className="block text-gray-700 font-medium mb-2">नए पासवर्ड की पुष्टि करें</label>
+                    <label htmlFor="confirmPassword" className="block text-gray-700 font-medium mb-2">Confirm New Password</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <FaLock className="text-gray-400" />
@@ -191,7 +236,7 @@ const ResetPassword = () => {
                         name="confirmPassword"
                         id="confirmPassword"
                         className="pl-10 pr-10 w-full p-3 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                        placeholder="नए पासवर्ड की पुष्टि करें"
+                        placeholder="Confirm new password"
                       />
                       <button
                         type="button"
@@ -209,7 +254,7 @@ const ResetPassword = () => {
                     disabled={isSubmitting || isLoading}
                     className="w-full bg-primary-600 text-white py-3 px-4 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting || isLoading ? 'पासवर्ड रीसेट कर रहे हैं...' : 'पासवर्ड रीसेट करें'}
+                    {isSubmitting || isLoading ? 'Resetting Password...' : 'Reset Password'}
                   </button>
                 </Form>
               )}
@@ -219,14 +264,14 @@ const ResetPassword = () => {
           <div className="mt-8 text-center">
             <Link to="/login" className="inline-flex items-center text-primary-600 hover:text-primary-800 font-medium">
               <FaArrowLeft className="mr-2" />
-              साइन इन पर वापस जाएं
+              Back to Sign In
             </Link>
           </div>
           
           {!token && !error && (
             <div className="mt-4 text-center">
               <Link to="/forgot-password" className="text-primary-600 hover:text-primary-800 font-medium">
-                नया पासवर्ड रीसेट लिंक प्राप्त करें
+                Get a new password reset link
               </Link>
             </div>
           )}

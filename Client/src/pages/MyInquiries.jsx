@@ -74,7 +74,7 @@ const MyInquiries = () => {
         setProductDetails(response.data);
       }
     } catch (err) {
-      console.error('Error fetching product details:', err);
+      
     }
   };
 
@@ -106,7 +106,7 @@ const MyInquiries = () => {
           questionsWithAnswers = await Promise.all(
             response.data.map(async (question) => {
               if (!question || !question.id) {
-                console.error('Invalid question object:', question);
+                
                 return null;
               }
               
@@ -118,7 +118,7 @@ const MyInquiries = () => {
                   status: answersResponse.data && answersResponse.data.length > 0 ? 'answered' : 'pending'
                 };
               } catch (err) {
-                console.error(`Error fetching answers for question ${question.id}:`, err);
+                
                 return {
                   ...question,
                   answers: [],
@@ -128,7 +128,7 @@ const MyInquiries = () => {
             })
           ).then(results => results.filter(Boolean)); // Filter out any null values
         } catch (err) {
-          console.error('Error processing questions with answers:', err);
+          
           // If Promise.all fails, we'll still have the questions without answers
           questionsWithAnswers = response.data.map(question => ({
             ...question,
@@ -143,7 +143,7 @@ const MyInquiries = () => {
             try {
               return new Date(b.created_at) - new Date(a.created_at);
             } catch (err) {
-              console.error('Error sorting dates:', err);
+              
               return 0; // Keep original order if there's an error
             }
           }
@@ -151,7 +151,7 @@ const MyInquiries = () => {
         
         setInquiries(sortedInquiries);
       } catch (err) {
-        console.error('Error fetching user inquiries:', err);
+        
         setError('Failed to load your inquiries');
         if (showNotification) {
           showNotification('Failed to load your inquiries', 'error');
@@ -237,7 +237,7 @@ const MyInquiries = () => {
         showNotification('Your message has been sent', 'success');
       }
     } catch (err) {
-      console.error('Error submitting reply:', err);
+      
       
       // Check for specific error about already submitted inquiry
       if (err.response?.data?.error === 'You have already submitted an inquiry for this product') {
@@ -343,7 +343,7 @@ const MyInquiries = () => {
         showNotification('Your question has been updated', 'success');
       }
     } catch (err) {
-      console.error('Error updating inquiry:', err);
+      
       const errorMessage = err.response?.data?.error || 'Failed to update your question';
       showNotification(errorMessage, 'error');
     } finally {
@@ -401,7 +401,7 @@ const MyInquiries = () => {
       
       showNotification('Your inquiry has been successfully deleted', 'success');
     } catch (err) {
-      console.error('Error deleting inquiry:', err);
+      
       const errorMessage = err.response?.data?.error || 'Failed to delete your inquiry';
       showNotification(errorMessage, 'error');
     } finally {
@@ -443,7 +443,7 @@ const MyInquiries = () => {
         return new Date(a.created_at) - new Date(b.created_at);
       }
     } catch (err) {
-      console.error('Error sorting dates:', err);
+      
       return 0; // Keep original order if there's an error
     }
   });
@@ -462,7 +462,7 @@ const MyInquiries = () => {
       };
       return new Date(dateString).toLocaleString(undefined, options);
     } catch (err) {
-      console.error('Error formatting date:', err);
+      
       return 'Invalid date';
     }
   };

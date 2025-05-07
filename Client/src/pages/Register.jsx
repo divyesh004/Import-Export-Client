@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { FaUser, FaEnvelope, FaLock, FaBuilding, FaPhone, FaMapMarkerAlt, FaGlobe } from 'react-icons/fa';
+import { FaUser,FaShieldAlt, FaEnvelope, FaLock, FaBuilding, FaPhone, FaMapMarkerAlt, FaGlobe } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import ReactCountryFlag from 'react-country-flag';
+import ReCAPTCHA from 'react-google-recaptcha';
+import { RECAPTCHA_SITE_KEY } from '../config/env';
 
 // List of countries with ISO codes for dropdown
 const countries = [
@@ -38,12 +40,22 @@ const countries = [
   { name: 'Sri Lanka', code: 'LK' }
 ];
 
+// Using reCAPTCHA site key from environment configuration
+
 const Register = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [userRole, setUserRole] = useState('customer');
+  const [captchaValue, setCaptchaValue] = useState(null);
+  const [captchaError, setCaptchaError] = useState('');
   const { register, showNotification } = useAuth();
   const navigate = useNavigate();
+  
+  // Handle reCAPTCHA change
+  const handleCaptchaChange = (value) => {
+    setCaptchaValue(value);
+    setCaptchaError('');
+  };
 
   // Registration validation schema
   const registerSchema = Yup.object().shape({
@@ -76,23 +88,50 @@ const Register = () => {
         is: 'seller',
         then: () => Yup.string().required('Address is required for sellers')
       }),
-    role: Yup.string().required('Role is required')
+    role: Yup.string().required('Role is required'),
+    recaptcha: Yup.string().nullable()
   });
 
+  // State for email verification success message
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  
   // Handle form submission
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       setError('');
+      setCaptchaError('');
       setIsLoading(true);
+      
+      // Verify reCAPTCHA
+      if (!captchaValue) {
+        setCaptchaError('Please complete the security verification');
+        setIsLoading(false);
+        setSubmitting(false);
+        return;
+      }
       
       // Remove confirmPassword as it's not needed for the API
       const { confirmPassword, ...userData } = values;
       
-      await register(userData);
-      showNotification('Registration successful! Welcome to our platform.', 'success');
-      navigate('/profile');
+      // Add captcha token to the registration request
+      userData.captchaToken = captchaValue;
+      
+      const response = await register(userData);
+      
+      // Store the registered email for verification instructions
+      setRegisteredEmail(values.email);
+      
+      // Show success message and verification instructions
+      setRegistrationSuccess(true);
+      showNotification('Registration successful! Please check your email to verify your account.', 'success');
+      
+      // Navigate to login page instead of profile
+      setTimeout(() => {
+        navigate('/login');
+      }, 5000); // Redirect after 5 seconds
     } catch (err) {
-      // More user-friendly registration error messages in Hindi
+      // More user-friendly registration error messages
       let errorMessage = 'Unable to complete registration at this time. Please try again.';
       
       if (err.error) {
@@ -109,6 +148,24 @@ const Register = () => {
       showNotification(errorMessage, 'error');
     } finally {
       setSubmitting(false);
+      setIsLoading(false);
+    }
+  };
+  
+  // Handle resend verification email
+  const handleResendVerification = async () => {
+    if (!registeredEmail) {
+      showNotification('Email address is missing. Please register again.', 'error');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      await resendVerificationEmail(registeredEmail);
+      showNotification('Verification email has been resent. Please check your inbox.', 'success');
+    } catch (err) {
+      showNotification('Failed to resend verification email. Please try again later.', 'error');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -140,6 +197,38 @@ const Register = () => {
               </div>
             )}
             
+            {registrationSuccess && (
+              <div className="bg-green-50 border-l-4 border-green-500 text-green-800 p-4 mb-6 rounded-lg animate-fadeIn">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="font-medium">Registration successful!</p>
+                    <p className="mt-1">We've sent a verification email to <strong>{registeredEmail}</strong>. Please check your inbox and click the verification link to activate your account.</p>
+                    <p className="mt-2">You will be redirected to the login page in a few seconds...</p>
+                    <button 
+                      onClick={handleResendVerification}
+                      disabled={isLoading}
+                      className="mt-3 text-sm text-primary-600 hover:text-primary-800 focus:outline-none flex items-center"
+                    >
+                      {isLoading ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Sending...
+                        </>
+                      ) : (
+                        'Resend verification email'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="mb-8">
               <p className="text-center text-gray-600 mb-3 text-sm">I want to register as:</p>
               <div className="flex justify-center space-x-4">
@@ -150,7 +239,7 @@ const Register = () => {
                     ? 'bg-primary-600 text-white shadow-md transform -translate-y-0.5' 
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                 >
-                  Customer
+                  Buyer
                 </button>
                 <button
                   type="button"
@@ -174,6 +263,7 @@ const Register = () => {
               country: '',
               company_name: '',
               address: '',
+              recaptcha: '',
               role: userRole
             }}
             validationSchema={registerSchema}
@@ -382,6 +472,25 @@ const Register = () => {
                   </div>
                   
                   <div className="mt-6">
+                    {/* reCAPTCHA */}
+                    <div className="col-span-1 md:col-span-2 mt-4">
+                      <div className="flex flex-col items-center">
+                        <div className="mb-2 flex items-center">
+                          <FaShieldAlt className="text-primary-500 mr-2" />
+                          <span className="text-sm text-gray-600">Security Verification</span>
+                        </div>
+                        <div className="flex justify-center">
+                          <ReCAPTCHA
+                            sitekey={RECAPTCHA_SITE_KEY}
+                            onChange={handleCaptchaChange}
+                          />
+                        </div>
+                        {captchaError && (
+                          <div className="mt-2 text-red-600 text-sm font-medium">{captchaError}</div>
+                        )}
+                      </div>
+                    </div>
+                    
                     <button
                       type="submit"
                       disabled={isSubmitting || isLoading}

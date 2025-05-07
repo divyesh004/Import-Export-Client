@@ -11,8 +11,14 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [imgErrors, setImgErrors] = useState({});
   const { currentUser, showNotification, toggleLoginPopup } = useAuth();
   const navigate = useNavigate();
+  
+  // Handle image error
+  const handleImageError = (orderId, imageUrl) => {
+    setImgErrors(prev => ({ ...prev, [orderId]: true }));
+  };
   
   // Create API instance with authentication handling
   let api;
@@ -21,19 +27,29 @@ const Orders = () => {
   useEffect(() => {
     // Create authenticated API instance that handles token expiration
     api = createAuthenticatedApi(
-      // Token expired callback
-      () => {
+      // Token expired callback with role-based redirection
+      (userRole) => {
         // Show login popup when token expires
         toggleLoginPopup(true);
-        // Redirect to home page if on orders page and not logged in
-        navigate('/');
+        
+        // Redirect based on previous user role
+        if (userRole === 'admin') {
+          // Admin will be redirected to admin dashboard when they log in again
+          navigate('/');
+        } else if (userRole === 'seller') {
+          // Seller will be redirected to seller dashboard when they log in again
+          navigate('/');
+        } else {
+          // Regular users are redirected to home page
+          navigate('/');
+        }
       },
       // Show notification function
       showNotification
     );
   }, [toggleLoginPopup, showNotification, navigate]);
 
-  // Fetch all orders for the current user
+  // Fetch orders for the current user only
   useEffect(() => {
     const fetchOrders = async () => {
       if (!currentUser) {
@@ -45,30 +61,27 @@ const Orders = () => {
         setLoading(true);
         setError('');
         
-        const response = await api.get('/orders');
-        console.log('Raw API response:', response.data);
+        // Try to fetch only current user's orders with user_id parameter
+        // If backend doesn't support this parameter, we'll filter on frontend
+        const response = await api.get(`/orders?user_id=${currentUser.id}`);
+        
         
         if (response.data && Array.isArray(response.data)) {
+          // Even if backend doesn't filter by user_id, ensure we only show current user's orders
+          const userOrders = response.data.filter(order => {
+            // Filter orders that belong to current user
+            return order.user_id === currentUser.id;
+          });
+          
           // Sort orders by date (newest first)
-          const sortedOrders = response.data.sort((a, b) => {
+          const sortedOrders = userOrders.sort((a, b) => {
             return new Date(b.created_at) - new Date(a.created_at);
           });
           
           // Process orders to ensure product data is properly structured
+          // Using sortedOrders which now contains only the current user's orders
           const processedOrders = sortedOrders.map(order => {
-            console.log('Processing order:', order.id, 'Original structure:', {
-              has_products_object: !!order.products,
-              has_product_object: !!order.product,
-              product_id: order.product_id,
-              image_sources: {
-                direct_image_url: order.image_url,
-                product_images: order.product_images,
-                products_imageUrls: order.products?.imageUrls,
-                product_image_url: order.product?.image_url,
-                product_imageUrls: order.product?.imageUrls,
-                product_product_images: order.product?.product_images
-              }
-            });
+            
             
             // Handle the case where product data is in 'products' object (as shown in API response)
             if (order.products) {
@@ -177,12 +190,7 @@ const Orders = () => {
               }
             }
             
-            // Log the processed order structure for debugging
-            console.log('Processed order:', order.id, 'Final image sources:', {
-              product_image_url: order.product?.image_url,
-              product_imageUrls: order.product?.imageUrls,
-              product_product_images: order.product?.product_images
-            });
+            
             
             return order;
           });
@@ -193,7 +201,7 @@ const Orders = () => {
           setOrders([]);
         }
       } catch (err) {
-        console.error('Error fetching orders:', err);
+        
         setError('Failed to load your orders');
         if (showNotification) {
           showNotification('Failed to load your orders', 'error');
@@ -218,7 +226,7 @@ const Orders = () => {
       };
       return new Date(dateString).toLocaleDateString(undefined, options);
     } catch (err) {
-      console.error('Error formatting date:', err);
+      
       return 'Invalid date';
     }
   };
@@ -356,7 +364,7 @@ const Orders = () => {
               <div className="p-4 sm:p-6">
                 {/* Product info */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center mb-4 pb-4 border-b border-gray-200">
-                  <div className="w-20 h-20 bg-gray-100 rounded-md flex-shrink-0 flex items-center justify-center mb-3 sm:mb-0 sm:mr-4">
+                  <div className="w-20 h-20 bg-gray-100 rounded-md flex-shrink-0 flex items-center justify-center mb-3 sm:mb-0 sm:mr-4 relative overflow-hidden">
                     {(() => {
                       // Extract all possible image sources
                       const imageSources = [
@@ -370,8 +378,13 @@ const Orders = () => {
                         order.products?.product_images?.[0]?.image_url
                       ];
                       
+                      // Filter out undefined, null, empty strings and validate URLs
+                      const validSources = imageSources.filter(src => {
+                        return src && typeof src === 'string' && src.trim() !== '';
+                      });
+                      
                       // Find the first valid image source
-                      let imageUrl = imageSources.find(src => src && typeof src === 'string');
+                      let imageUrl = validSources.length > 0 ? validSources[0] : null;
                       
                       // Fix relative URLs by prepending API_BASE_URL
                       if (imageUrl && !imageUrl.startsWith('http')) {
@@ -379,33 +392,37 @@ const Orders = () => {
                         imageUrl = `${API_BASE_URL}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
                       }
                       
+                      // Validate final URL
+                      if (imageUrl) {
+                        try {
+                          // Test if URL is valid by creating a URL object
+                          new URL(imageUrl);
+                        } catch (e) {
+                          
+                          imageUrl = null; // Reset to null if invalid
+                        }
+                      }
+                      
                       // Debug image sources with more details
-                      console.log('Order ID:', order.id, 'Image sources:', {
-                        product_image_url: order.product?.image_url,
-                        product_imageUrls: order.product?.imageUrls,
-                        product_product_images: order.product?.product_images,
-                        products_imageUrls: order.products?.imageUrls,
-                        direct_image_url: order.image_url,
-                        product_images: order.product_images,
-                        selected_image: imageUrl,
-                        api_base_url: API_BASE_URL
-                      });
                       
-                      // Log the final image URL for debugging
-                      console.log('Final image URL being used:', imageUrl);
                       
-                      return imageUrl ? (
-                        <img 
-                          src={imageUrl} 
-                          alt={order.products?.name || order.product?.name || order.product_name || 'Product Image'} 
-                          className="max-w-full max-h-full object-contain"
-                          onLoad={() => console.log('Image loaded successfully:', imageUrl)}
-                          onError={() => {
-                            console.error('Image failed to load:', imageUrl);
-                          }}
-                        />
-                      ) : (
-                        <ProductFallbackImage />
+                      
+                      
+                      if (!imageUrl || imgErrors[order.id]) {
+                        return <ProductFallbackImage />;
+                      }
+                      
+                      return (
+                        <div className="relative">
+                          {/* Image with error handling */}
+                          <img 
+                            src={imageUrl} 
+                            alt={order.products?.name || order.product?.name || order.product_name || 'Product Image'} 
+                            className="max-w-full max-h-full object-contain"
+                            
+                            onError={() => handleImageError(order.id, imageUrl)}
+                          />
+                        </div>
                       );
                     })()}
                   </div>
@@ -414,6 +431,14 @@ const Orders = () => {
                     <div className="text-gray-600 text-sm mt-1">Quantity: {order.quantity || 1}</div>
                     <div className="text-gray-600 text-sm">Price: ${(order.products?.price || order.product?.price || order.price || 0).toFixed(2)}</div>
                     {(order.products?.description || order.product_description) && <div className="text-gray-600 text-sm mt-1 line-clamp-2">{order.products?.description || order.product_description}</div>}
+                    {(order.product?.id || order.products?.id || order.product_id) && (
+                      <Link 
+                        to={`/products/${order.product?.id || order.products?.id || order.product_id}`}
+                        className="inline-flex items-center text-sm bg-indigo-600 text-white px-3 py-1 rounded mt-2 hover:bg-indigo-700 transition-colors"
+                      >
+                        Go to Product
+                      </Link>
+                    )}
                   </div>
                   <div className="mt-3 sm:mt-0">
                     <div className="text-lg font-semibold">

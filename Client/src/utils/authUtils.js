@@ -33,6 +33,9 @@ export const createAuthenticatedApi = (onTokenExpired, showNotification) => {
     (error) => {
       // Handle 401 Unauthorized errors (token expired or invalid)
       if (error.response && error.response.status === 401) {
+        // Get user role before clearing data
+        const userRole = localStorage.getItem('role');
+        
         // Clear user data
         localStorage.removeItem('token');
         localStorage.removeItem('role');
@@ -42,9 +45,9 @@ export const createAuthenticatedApi = (onTokenExpired, showNotification) => {
           showNotification('Your session has expired. Please login again.', 'error');
         }
         
-        // Call the token expired callback
+        // Call the token expired callback with user role
         if (onTokenExpired) {
-          onTokenExpired();
+          onTokenExpired(userRole);
         }
       }
       return Promise.reject(error);

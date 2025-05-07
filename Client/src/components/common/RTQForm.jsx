@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { Link, useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
-import { FaUser, FaBox, FaEnvelope, FaPhone, FaCommentAlt, FaLock, FaFileAlt, FaCalculator, FaQuestionCircle } from 'react-icons/fa';
+import { FaUser, FaBox, FaEnvelope, FaPhone, FaCommentAlt, FaLock, FaFileAlt, FaCalculator, FaQuestionCircle, FaExclamationTriangle } from 'react-icons/fa';
 import Modal from './Modal';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
@@ -18,6 +18,7 @@ const RTQForm = ({ isOpen, onClose, product }) => {
   const [calculatedPrice, setCalculatedPrice] = useState(product?.price || 0);
   const [hasInquired, setHasInquired] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isRestrictedUser, setIsRestrictedUser] = useState(false);
 
   // Create axios instance with auth header
   const api = axios.create({
@@ -36,6 +37,12 @@ const RTQForm = ({ isOpen, onClose, product }) => {
     },
     (error) => Promise.reject(error)
   );
+
+  // Check if user is admin or seller (restricted users)
+  useEffect(() => {
+    const userRole = localStorage.getItem('role');
+    setIsRestrictedUser(userRole === 'admin' || userRole === 'seller');
+  }, []);
 
   // Fetch user profile data and check if user has already inquired when modal opens
   useEffect(() => {
@@ -211,6 +218,12 @@ const RTQForm = ({ isOpen, onClose, product }) => {
       title="Request price"
       size="lg"
     >
+      {isRestrictedUser && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+          <FaExclamationTriangle className="mr-2" />
+          <span>Admin and seller accounts cannot submit quote requests. Please use a customer account.</span>
+        </div>
+      )}
       {!currentUser ? (
         <div className="text-center py-4 sm:py-6 md:py-8">
           <div className="flex justify-center mb-3 sm:mb-4">

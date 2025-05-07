@@ -38,6 +38,23 @@
 }
 
 .hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS devices */
+}
+
+/* Enable horizontal touch scrolling for mobile */
+.snap-x {
+  scroll-snap-type: x mandatory;
+  scroll-padding: 1rem;
+}
+
+.snap-start {
+  scroll-snap-align: start;
+}
+
+/* Add padding to bottom of scrollable containers */
+.pb-6 {
+  padding-bottom: 1.5rem;
 }

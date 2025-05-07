@@ -21,6 +21,7 @@ import {
   FaTachometerAlt,
   FaShoppingBag,
   FaSpinner,
+  FaArrowUp,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import { useMediaQuery } from "react-responsive";
@@ -56,6 +57,7 @@ const Navbar = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
   const { currentUser, logout, toggleLoginPopup, showNotification } = useAuth();
   const navigate = useNavigate();
   const isMobile = useMediaQuery({ maxWidth: 767 });
@@ -67,6 +69,15 @@ const Navbar = () => {
   useEffect(() => {
     initApi(toggleLoginPopup, showNotification);
   }, [toggleLoginPopup, showNotification]);
+  
+  // Handle custom product request button click
+  const handleCustomProductRequest = () => {
+    if (!currentUser) {
+      toggleLoginPopup(true);
+      return;
+    }
+    setShowCustomRequestForm(true);
+  };
 
   // Refs for handling clicks outside
   const dropdownRef = useRef(null);
@@ -225,6 +236,8 @@ const Navbar = () => {
     const handleResize = () => {
       if (window.innerWidth >= 768 && isMenuOpen) {
         setIsMenuOpen(false);
+        // Re-enable scrolling when menu is closed on resize
+        document.body.style.overflow = 'auto';
       }
     };
 
@@ -233,11 +246,51 @@ const Navbar = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, [isMenuOpen]);
+  
+  // Handle scroll event to show/hide scroll to top button
+  useEffect(() => {
+    const handleScroll = () => {
+      // Show scroll to top button when user scrolls down 300px
+      if (window.scrollY > 300) {
+        setShowScrollToTop(true);
+      } else {
+        setShowScrollToTop(false);
+      }
+    };
+
+    // Add scroll event listener
+    window.addEventListener('scroll', handleScroll);
+    
+    // Cleanup function
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
 
   const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+    const newMenuState = !isMenuOpen;
+    setIsMenuOpen(newMenuState);
+    
+    // Toggle body scroll when menu is opened/closed
+    if (newMenuState) {
+      // Disable scrolling on body when menu is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Enable scrolling on body when menu is closed
+      document.body.style.overflow = 'auto';
+    }
+    
     // Don't reset dropdown when toggling menu
     // This allows dropdowns to stay open when menu is toggled
+  };
+  
+  // Function to scroll to top
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   };
 
   const toggleDropdown = (dropdownName, event) => {
@@ -250,11 +303,11 @@ const Navbar = () => {
 
   // Animation classes for mobile menu items
   const mobileMenuItemClass =
-    "flex items-center text-gray-700 hover:text-primary-600 transition-all duration-200 py-3 px-2 rounded-md hover:bg-gray-50";
+    "flex items-center text-gray-700 hover:text-primary-600 transition-all duration-200 py-3 px-4 rounded-lg hover:bg-gray-50 shadow-sm";
   const mobileDropdownItemClass =
-    "block text-gray-700 hover:text-primary-600 transition-all duration-200 font-medium py-3 px-3 rounded-md hover:bg-gray-100";
+    "block text-gray-700 hover:text-primary-600 transition-all duration-200 font-medium py-3 px-4 rounded-lg hover:bg-gray-100";
   const mobileButtonClass =
-    "flex items-center w-full text-left text-gray-700 hover:text-primary-600 transition-all duration-200 py-3 px-2 rounded-md hover:bg-gray-50 mt-2";
+    "flex items-center w-full text-left text-gray-700 hover:text-primary-600 transition-all duration-200 py-3 px-4 rounded-lg hover:bg-gray-50 mt-2 shadow-sm";
 
   const handleLogout = async () => {
     try {
@@ -267,32 +320,59 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Navbar Row */}
-        <div className="flex justify-between items-center py-3 md:py-4">
+        <div className="flex justify-between items-center py-3 sm:py-3 md:py-4 relative">
           {/* Logo */}
           <Link
             to="/"
             className="text-xl md:text-2xl font-bold text-primary-600 flex items-center"
           >
-            <h3 className="text-xl font-bold">
-              Import<span className="text-accent-500">Export</span>
-            </h3>
+            <div className="flex items-center">
+              <img 
+                src="images/indibridge-logo.png" 
+                alt="IndiBridge Logo" 
+                className="h-10 md:h-12 w-auto mr-2" 
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.style.display = 'none';
+                  document.getElementById('fallback-logo-text').style.display = 'block';
+                }}
+              />
+              <h3 id="fallback-logo-text" className="text-xl font-bold" style={{display: 'none'}}>
+                INDI<span className="text-accent-500">BRIDGE</span>
+              </h3>
+            </div>
           </Link>
 
-          {/* Mobile Menu Toggle */}
-          <button
-            onClick={toggleMenu}
-            className="md:hidden text-primary-600 hover:text-primary-700 focus:outline-none p-2 rounded-md bg-primary-50 hover:bg-primary-100 transition-all duration-200 shadow-sm"
-            aria-label="Toggle menu"
-            aria-expanded={isMenuOpen}
-          >
-            {isMenuOpen ? (
-              <FaTimes className="h-5 w-5" />
-            ) : (
-              <FaBars className="h-5 w-5" />
-            )}
-          </button>
+          {/* Mobile Menu Toggle or Scroll to Top Button */}
+          {!isDesktop && (
+            <button
+              onClick={showScrollToTop ? scrollToTop : toggleMenu}
+              className="text-white hover:text-gray-100 focus:outline-none p-3 rounded-full bg-primary-600 hover:bg-primary-700 transition-all duration-200 shadow-md fixed right-4 bottom-4 z-[60]"
+              aria-label={showScrollToTop ? "Scroll to top" : "Toggle menu"}
+              aria-expanded={isMenuOpen}
+            >
+              {isMenuOpen ? (
+                <FaTimes className="h-5 w-5" />
+              ) : showScrollToTop ? (
+                <FaArrowUp className="h-5 w-5" />
+              ) : (
+                <FaBars className="h-5 w-5" />
+              )}
+            </button>
+          )}
+          
+          {/* Desktop Scroll to Top Button - Only visible when scrolling */}
+          {isDesktop && showScrollToTop && (
+            <button
+              onClick={scrollToTop}
+              className="text-white hover:text-gray-100 focus:outline-none p-3 rounded-full bg-primary-600 hover:bg-primary-700 transition-all duration-200 shadow-md fixed right-4 bottom-4 z-[60]"
+              aria-label="Scroll to top"
+            >
+              <FaArrowUp className="h-5 w-5" />
+            </button>
+          )}
       
 
           {/* Desktop Search Bar */}
@@ -318,7 +398,7 @@ const Navbar = () => {
               
               {/* Search Suggestions Dropdown */}
               {showSuggestions && (
-                <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-[61] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-[50vh] overflow-y-auto">
                   {isSearching ? (
                     <div className="flex justify-center items-center p-4">
                       <FaSpinner className="animate-spin text-primary-500 mr-2" />
@@ -341,7 +421,7 @@ const Navbar = () => {
                               onClick={() => {
                                 setSearchTerm("");
                                 setShowSuggestions(false);
-                                setIsMenuOpen(false); // मोबाइल मेनू को बंद करें
+                                setIsMenuOpen(false); // Close mobile menu
                                 navigate(`/products/${productId}`);
                               }}
                             >
@@ -522,7 +602,7 @@ const Navbar = () => {
                       ease: "easeInOut",
                     },
                   }}
-                  onClick={() => setShowCustomRequestForm(true)}
+                  onClick={handleCustomProductRequest}
                 >
                   <FaShoppingBag className="text-white" />
                   <span>Need?</span>
@@ -532,16 +612,44 @@ const Navbar = () => {
               <>
                 <Link
                   to="/login"
-                  className="text-gray-700 hover:text-primary-600 transition-colors"
+                  className="text-gray-700 hover:text-primary-600 transition-colors flex items-center"
                 >
-                  Login
+                  <FaUser className="mr-1" />
+                  <span>Login</span>
                 </Link>
+                
                 <Link
                   to="/register"
-                  className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors"
+                  className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md transition-colors flex items-center"
                 >
-                  Register
+                  <FaUserCircle className="mr-1" />
+                  <span>Register</span>
                 </Link>
+                
+                {/* Custom Product Request Button for non-logged in users */}
+                <motion.button
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 rounded-md font-medium flex items-center space-x-1 shadow-md hover:shadow-lg transition-all duration-300"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: 1,
+                    y: [0, -5, 0],
+                  }}
+                  transition={{
+                    duration: 0.5,
+                    y: {
+                      duration: 1.5,
+                      repeat: Infinity,
+                      repeatType: "reverse",
+                      ease: "easeInOut",
+                    },
+                  }}
+                  onClick={handleCustomProductRequest}
+                >
+                  <FaShoppingBag className="text-white" />
+                  <span>Need?</span>
+                </motion.button>
               </>
             )}
           </div>
@@ -577,7 +685,7 @@ const Navbar = () => {
             <input
               type="text"
               placeholder="Search products..."
-              className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+              className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onFocus={handleInputFocus}
@@ -594,7 +702,7 @@ const Navbar = () => {
             
             {/* Mobile Search Suggestions */}
             {showSuggestions && (
-              <div className="fixed left-0 right-0 top-auto z-[100] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+              <div className="fixed left-0 right-0 top-auto z-[61] w-full mx-auto px-4 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-[50vh] overflow-y-auto">
                 {isSearching ? (
                   <div className="flex justify-center items-center p-4">
                     <FaSpinner className="animate-spin text-primary-500 mr-2" />
@@ -677,19 +785,28 @@ const Navbar = () => {
           </form>
         </div>
 
+        {/* Mobile Menu Overlay - prevents background interaction */}
+        {isMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-[51] md:hidden"
+            onClick={toggleMenu}
+          />
+        )}
+        
         {/* Mobile Menu with Animation */}
         <div
-          className={`md:hidden py-4 border-t border-gray-200 absolute top-full left-0 right-0 bg-white shadow-xl z-50 max-h-[90vh] overflow-y-auto transition-all duration-300 ease-in-out ${
+          className={`md:hidden py-4 border-t border-gray-200 fixed bottom-0 left-0 right-0 bg-white shadow-xl z-[52] max-h-[80vh] overflow-y-auto transition-all duration-300 ease-in-out ${
             isMenuOpen
               ? "opacity-100 translate-y-0"
-              : "opacity-0 -translate-y-4 pointer-events-none"
+              : "opacity-0 translate-y-full pointer-events-none"
           }`}
           ref={mobileMenuRef}
+          style={{ height: isMenuOpen ? 'auto' : '0' }}
         >
           <div className="flex flex-col space-y-2 px-4">
             {currentUser && (
-              <div className="flex items-center space-x-3 pb-3 mb-2 border-b border-gray-200">
-                <div className="bg-primary-100 rounded-full p-2">
+              <div className="flex items-center space-x-3 pb-3 mb-3 border-b border-gray-200">
+                <div className="bg-primary-100 rounded-full p-2 shadow-sm">
                   <FaUserCircle className="text-primary-600 text-2xl" />
                 </div>
                 <div>
@@ -707,36 +824,22 @@ const Navbar = () => {
 
             <Link
               to="/"
-              className={mobileMenuItemClass}
+              className={`${mobileMenuItemClass} mb-1`}
               onClick={() => setIsMenuOpen(false)}
             >
               <FaHome className="mr-3 text-primary-500 text-lg" />
               <span className="font-medium">Home</span>
             </Link>
 
-            <Link
-              to="/products"
-              className={mobileMenuItemClass}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <FaBoxOpen className="mr-3 text-primary-500 text-lg" />
-              <span className="font-medium">Products</span>
-            </Link>
+            {/* Products link is handled by the dropdown below */}
 
             {currentUser && (
               <>
-                <Link
-                  to="/my-inquiries"
-                  className={mobileMenuItemClass}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <FaQuestionCircle className="mr-3 text-primary-500 text-lg" />
-                  <span className="font-medium">My Inquiries</span>
-                </Link>
+                {/* My Inquiries link is now handled below */}
 
                 <Link
                   to="/orders"
-                  className={mobileMenuItemClass}
+                  className={`${mobileMenuItemClass} mb-1`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <FaClipboardCheck className="mr-3 text-primary-500 text-lg" />
@@ -748,7 +851,7 @@ const Navbar = () => {
                   currentUser.role === "sub-admin") && (
                   <Link
                     to="/dashboard"
-                    className={mobileMenuItemClass}
+                    className={`${mobileMenuItemClass} mb-1`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <FaTachometerAlt className="mr-3 text-primary-500 text-lg" />
@@ -761,10 +864,10 @@ const Navbar = () => {
             {/* Custom Product Request Button - Mobile */}
             <motion.button
               onClick={() => {
-                setShowCustomRequestForm(true);
+                handleCustomProductRequest();
                 setIsMenuOpen(false);
               }}
-              className={`${mobileMenuItemClass} bg-gradient-to-r from-primary-500 to-primary-600 text-white my-2 shadow-sm`}
+              className={`${mobileMenuItemClass} bg-gradient-to-r from-primary-500 to-primary-600 text-white my-3 shadow-md`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -775,25 +878,27 @@ const Navbar = () => {
             {/* Profile and Logout options for mobile */}
             {currentUser ? (
               <>
-                <Link
-                  to="/profile"
-                  className={mobileMenuItemClass}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <FaUserCircle className="mr-3 text-primary-500 text-lg" />
-                  <span className="font-medium">Profile</span>
-                </Link>
+                <div className="border-t border-gray-200 my-2 pt-2">
+                  <Link
+                    to="/profile"
+                    className={`${mobileMenuItemClass} mb-1`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <FaUserCircle className="mr-3 text-primary-500 text-lg" />
+                    <span className="font-medium">Profile</span>
+                  </Link>
 
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsMenuOpen(false);
-                  }}
-                  className={mobileButtonClass}
-                >
-                  <FaSignOutAlt className="mr-3 text-primary-500 text-lg" />
-                  <span className="font-medium">Logout</span>
-                </button>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsMenuOpen(false);
+                    }}
+                    className={`${mobileButtonClass} mb-1`}
+                  >
+                    <FaSignOutAlt className="mr-3 text-primary-500 text-lg" />
+                    <span className="font-medium">Logout</span>
+                  </button>
+                </div>
               </>
             ) : (
               <>
@@ -866,15 +971,17 @@ const Navbar = () => {
               <span className="font-medium">Cart</span>
             </Link>
 
-            {/* My Inquiries Link */}
-            <Link
-              to="/my-inquiries"
-              className={mobileMenuItemClass}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <FaQuestionCircle className="mr-3 text-primary-500 text-lg" />
-              <span className="font-medium">My Inquiries</span>
-            </Link>
+            {/* My Inquiries Link - Only show for logged in users */}
+            {currentUser && (
+              <Link
+                to="/my-inquiries"
+                className={mobileMenuItemClass}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <FaQuestionCircle className="mr-3 text-primary-500 text-lg" />
+                <span className="font-medium">My Inquiries</span>
+              </Link>
+            )}
 
             {currentUser ? (
               <>

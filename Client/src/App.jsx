@@ -26,10 +26,16 @@ import VerifyEmail from './pages/VerifyEmail'
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, toggleLoginPopup, showNotification } = useAuth();
   
-  if (!currentUser) {
-    return <Navigate to="/login" replace />;
+  // Check if user is authenticated by verifying token exists
+  const token = localStorage.getItem('token');
+  
+  if (!currentUser || !token) {
+    // Show notification and login popup
+    showNotification('Please login to access this page', 'error');
+    toggleLoginPopup(true);
+    return <Navigate to="/" replace />;
   }
   
   return children;
@@ -37,10 +43,16 @@ const ProtectedRoute = ({ children }) => {
 
 // Role-based protected route component
 const RoleProtectedRoute = ({ children, allowedRoles }) => {
-  const { currentUser, showNotification } = useAuth();
+  const { currentUser, showNotification, toggleLoginPopup } = useAuth();
   
-  if (!currentUser) {
-    return <Navigate to="/login" replace />;
+  // Check if user is authenticated by verifying token exists
+  const token = localStorage.getItem('token');
+  
+  if (!currentUser || !token) {
+    // Show notification and login popup
+    showNotification('Please login to access this page', 'error');
+    toggleLoginPopup(true);
+    return <Navigate to="/" replace />;
   }
   
   if (!allowedRoles.includes(currentUser.role)) {
@@ -53,10 +65,16 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
 
 // Role-based redirect component
 const RoleBasedRedirect = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, toggleLoginPopup, showNotification } = useAuth();
   
-  if (!currentUser) {
-    return <Navigate to="/login" replace />;
+  // Check if user is authenticated by verifying token exists
+  const token = localStorage.getItem('token');
+  
+  if (!currentUser || !token) {
+    // Show notification and login popup
+    showNotification('Please login to access this page', 'error');
+    toggleLoginPopup(true);
+    return <Navigate to="/" replace />;
   }
   
   // Redirect based on user role

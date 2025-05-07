@@ -44,6 +44,9 @@ export const AuthProvider = ({ children }) => {
       (error) => {
         // Handle 401 Unauthorized errors (token expired or invalid)
         if (error.response && error.response.status === 401) {
+          // Get user role before clearing data
+          const userRole = localStorage.getItem('role');
+          
           // Clear user data
           localStorage.removeItem('token');
           localStorage.removeItem('role');
@@ -55,15 +58,32 @@ export const AuthProvider = ({ children }) => {
             type: 'error'
           });
           
-          // Show login popup instead of redirecting
+          // Show login popup
           setShowLoginPopup(true);
           
-          // Only redirect to login page if we're on a protected route that requires full authentication
-          const protectedRoutes = ['/dashboard', '/profile', '/orders', '/my-inquiries'];
+          // Define protected routes by role
+          const protectedRoutes = {
+            user: ['/dashboard', '/profile', '/orders', '/my-inquiries'],
+            seller: ['/seller', '/seller-dashboard', '/manage-products'],
+            admin: ['/admin', '/admin-dashboard', '/rtq-management']
+          };
+          
           const currentPath = window.location.pathname;
           
-          if (protectedRoutes.some(route => currentPath.startsWith(route))) {
-            navigate('/login');
+          // Check if current path is protected for any role
+          const isProtectedRoute = Object.values(protectedRoutes).some(routes => 
+            routes.some(route => currentPath.startsWith(route))
+          );
+          
+          // If on protected route, redirect based on previous role
+          if (isProtectedRoute) {
+            if (userRole === 'admin' || userRole === 'seller') {
+              // For admin and seller, redirect to home page
+              navigate('/');
+            } else {
+              // For regular users, redirect to login
+              navigate('/login');
+            }
           }
         }
         return Promise.reject(error);
@@ -92,28 +112,66 @@ export const AuthProvider = ({ children }) => {
   // Register a new user
   const register = async (userData) => {
     try {
-      const response = await api.post('/auth/signup', userData);
+      // Extract captchaToken if it exists in userData
+      const { captchaToken, ...userInfo } = userData;
       
-      // Save token and user role to localStorage
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('role', response.data.user.role);
+      // Create request payload with captcha token
+      const requestData = {
+        ...userInfo,
+        recaptchaToken: captchaToken // Send the reCAPTCHA token to the backend
+      };
       
-      // Set current user
-      setCurrentUser({
-        token: response.data.token,
-        role: response.data.user.role
-      });
+      const response = await api.post('/auth/signup', requestData);
       
-      return response.data;
+      // Don't automatically log in the user after registration
+      // Instead, return the response data which should include a message about email verification
+      return {
+        ...response.data,
+        requiresEmailVerification: true
+      };
     } catch (error) {
       throw error.response?.data || { error: 'Registration failed' };
     }
   };
+  
+  // Verify email with token
+  const verifyEmail = async (token) => {
+    try {
+      const response = await api.post('/auth/verify-email', { token });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Email verification failed' };
+    }
+  };
+  
+  // Resend verification email
+  const resendVerificationEmail = async (email) => {
+    try {
+      // If email is provided, use the specific endpoint
+      if (email) {
+        const response = await api.post('/auth/resend-verification', { email });
+        return response.data;
+      } else {
+        // If no email provided, use the user's current session
+        const response = await api.post('/auth/verify-email/resend');
+        return response.data;
+      }
+    } catch (error) {
+      throw error.response?.data || { error: 'Failed to resend verification email' };
+    }
+  };
 
   // Login user
-  const login = async (email, password) => {
+  const login = async (email, password, captchaToken) => {
     try {
-      const response = await api.post('/auth/login', { email, password });
+      // Create request payload with email, password and captcha token
+      const requestData = {
+        email,
+        password,
+        recaptchaToken: captchaToken // Send the reCAPTCHA token to the backend
+      };
+      
+      const response = await api.post('/auth/login', requestData);
       
       // Save token and user role to localStorage
       localStorage.setItem('token', response.data.token);
@@ -156,6 +214,11 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Reset token is missing or invalid');
       }
       
+      // Check if token contains error parameters
+      if (token.includes('error=') || token.includes('error_code=')) {
+        throw new Error('Invalid reset token. The link appears to contain error information instead of a valid token.');
+      }
+      
       // Log the token for debugging (remove in production)
       console.log('Using reset token:', token);
       
@@ -167,6 +230,16 @@ export const AuthProvider = ({ children }) => {
       return response.data;
     } catch (error) {
       console.error('Reset password error:', error);
+      
+      // Handle specific error cases
+      if (error.response) {
+        if (error.response.status === 401) {
+          throw { error: 'Your password reset link has expired or is invalid. Please request a new one.' };
+        } else if (error.response.status === 400) {
+          throw { error: 'Invalid password format or reset request. Please try again with a stronger password.' };
+        }
+      }
+      
       throw error.response?.data || { error: 'Failed to reset password' };
     }
   };
@@ -217,31 +290,45 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Toggle login popup
+  // Toggle login popup with role-based redirection
   const toggleLoginPopup = (show = true) => {
     setShowLoginPopup(show);
-  };
-
-
-  // Verify email with token
-  const verifyEmail = async (token) => {
-    try {
-      const response = await api.post('/auth/verify-email', { token });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { error: 'Failed to verify email' };
+    
+    if (show) {
+      // Get current user role
+      const userRole = localStorage.getItem('role');
+      
+      // Get current path to check if we're on a protected page
+      const currentPath = window.location.pathname;
+      
+      // Define protected routes by role
+      const protectedRoutes = {
+        user: ['/profile', '/orders', '/my-inquiries'],
+        seller: ['/seller', '/seller-dashboard', '/manage-products'],
+        admin: ['/admin', '/admin-dashboard', '/rtq-management']
+      };
+      
+      // Check if current path is protected for the user's role
+      const isProtectedRoute = userRole && protectedRoutes[userRole] && 
+        protectedRoutes[userRole].some(route => currentPath.startsWith(route));
+      
+      // If we're on a protected route, redirect based on role
+      if (isProtectedRoute) {
+        // For admin and seller, redirect to their respective dashboards
+        if (userRole === 'admin') {
+          navigate('/admin');
+        } else if (userRole === 'seller') {
+          navigate('/seller');
+        } else {
+          // For regular users, redirect to home
+          navigate('/');
+        }
+      }
     }
   };
 
-  // Resend verification email
-  const resendVerificationEmail = async () => {
-    try {
-      const response = await api.post('/auth/verify-email/resend');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { error: 'Failed to resend verification email' };
-    }
-  };
+
+
 
   // Check if user's email is verified
   const checkEmailVerification = async () => {

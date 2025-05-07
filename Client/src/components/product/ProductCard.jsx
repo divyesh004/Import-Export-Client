@@ -1,73 +1,137 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaStar, FaEye, FaShoppingCart } from 'react-icons/fa';
+import { FaStar, FaRegStar, FaStarHalfAlt, FaShoppingCart, FaHeart } from 'react-icons/fa';
+import { useState } from 'react';
 
-const ProductCard = ({ product }) => (
-  <div className="h-full transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-    <Link to={`/products/${product.id}`} className="block h-full">
-      <div className="card group bg-white rounded-xl overflow-hidden shadow-md h-full flex flex-col border border-gray-100">
-        <div className="relative overflow-hidden">
+const ProductCard = ({ product, addToCart, addToWishlist }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  
+  // Format price with currency symbol
+  const formatPrice = (price) => {
+    return `₹${price.toLocaleString()}`;
+  };
+  
+  // Calculate discounted price
+  const calculateDiscountedPrice = (price, discount) => {
+    if (!discount) return price;
+    return price - (price * discount / 100);
+  };
+  
+  // Render star rating
+  const renderStarRating = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    
+    // Add full stars
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<FaStar key={`full-${i}`} className="text-yellow-400" />);
+    }
+    
+    // Add half star if needed
+    if (hasHalfStar) {
+      stars.push(<FaStarHalfAlt key="half" className="text-yellow-400" />);
+    }
+    
+    // Add empty stars
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(<FaRegStar key={`empty-${i}`} className="text-yellow-400" />);
+    }
+    
+    return stars;
+  };
+  
+  // Handle image error
+  const handleImageError = (e) => {
+    e.target.onerror = null;
+    e.target.src = '/images/category-electronics-new.svg'; // Fallback image
+  };
+  
+  return (
+    <div 
+      className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 h-full card-transition"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Link to={`/products/${product.id}`} className="block relative h-full">
+        <div className="relative overflow-hidden h-48 bg-gray-50 flex items-center justify-center">
+          <img 
+            src={product.image} 
+            alt={product.name}
+            className={`w-full h-full object-contain transition-transform duration-500 ${isHovered ? 'scale-105' : 'scale-100'}`}
+            onError={handleImageError}
+            loading="lazy"
+          />
           {product.discount > 0 && (
-            <div className="absolute top-0 left-0 bg-accent-500 text-white text-xs font-bold px-2 py-1 rounded-br-lg z-10">
+            <div className="absolute top-2 right-2 bg-accent-500 text-white text-xs font-bold px-2 py-1 rounded-md">
               {product.discount}% OFF
             </div>
           )}
-          <div className="h-52 overflow-hidden bg-white flex items-center justify-center">
-            <img 
-              src={product.image} 
-              alt={product.name} 
-              className="w-4/5 h-4/5 object-contain transition-transform duration-500 group-hover:scale-110"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = '/images/category-electronics-new.svg';
-              }}
-              loading="lazy"
-            />
+        </div>
+        
+        <div className="p-5">
+          <div className="text-xs text-gray-500 mb-1 uppercase">{product.category}</div>
+          <h3 className="text-gray-800 font-semibold text-lg mb-2 line-clamp-2 h-14">{product.name}</h3>
+          
+          <div className="flex items-center mb-3">
+            <div className="flex mr-2">
+              {renderStarRating(product.rating)}
+            </div>
+            <span className="text-gray-600 text-sm">
+              ({product.reviews || 0})
+            </span>
           </div>
-          <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+          
+          <div className="flex items-center justify-between mt-auto">
+            <div>
+              {product.discount > 0 ? (
+                <div className="flex flex-col">
+                  <span className="text-gray-500 line-through text-sm">
+                    {formatPrice(product.price)}
+                  </span>
+                  <span className="text-primary-600 font-bold">
+                    {formatPrice(calculateDiscountedPrice(product.price, product.discount))}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-primary-600 font-bold">
+                  {formatPrice(product.price)}
+                </span>
+              )}
+            </div>
+            
             <div className="flex space-x-2">
-              <button className="bg-white text-primary-600 p-2 rounded-full hover:bg-primary-600 hover:text-white transition-colors duration-300">
-                <FaEye size={18} />
-              </button>
-              <button className="bg-white text-primary-600 p-2 rounded-full hover:bg-primary-600 hover:text-white transition-colors duration-300">
-                <FaShoppingCart size={18} />
-              </button>
+              {addToWishlist && (
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    addToWishlist(product);
+                  }}
+                  className="p-2 text-gray-500 hover:text-accent-500 transition-colors bg-gray-100 rounded-full hover:bg-accent-100"
+                  aria-label="Add to wishlist"
+                >
+                  <FaHeart />
+                </button>
+              )}
+              
+              {addToCart && (
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    addToCart(product);
+                  }}
+                  className="p-2 text-gray-500 hover:text-primary-600 transition-colors bg-gray-100 rounded-full hover:bg-primary-100"
+                  aria-label="Add to cart"
+                >
+                  <FaShoppingCart />
+                </button>
+              )}
             </div>
           </div>
         </div>
-        <div className="p-4 flex-grow flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-start mb-1">
-              <h3 className="font-medium text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2">{product.name}</h3>
-              <div className="flex flex-col items-end">
-                {product.discount > 0 ? (
-                  <>
-                    <span className="text-accent-600 font-semibold">${(product.price * (1 - product.discount / 100)).toFixed(2)}</span>
-                    <span className="text-gray-400 text-xs line-through">${product.price}</span>
-                  </>
-                ) : (
-                  <span className="text-accent-600 font-semibold">${product.price}</span>
-                )}
-              </div>
-            </div>
-            <p className="text-sm text-gray-500 mb-2 bg-gray-100 inline-block px-2 py-0.5 rounded-full text-xs">{product.category}</p>
-          </div>
-          <div className="flex items-center mt-2">
-            <div className="flex text-accent-500">
-              {[...Array(5)].map((_, i) => (
-                <FaStar 
-                  key={i} 
-                  className={i < Math.floor(product.rating) ? 'text-accent-500' : 'text-gray-300'}
-                  size={14}
-                />
-              ))}
-            </div>
-            <span className="text-xs text-gray-500 ml-2">{product.reviews} reviews</span>
-          </div>
-        </div>
-      </div>
-    </Link>
-  </div>
-);
+      </Link>
+    </div>
+  );
+};
 
 export default ProductCard;

@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-xl font-bold mb-4">Import<span className="text-accent-500">Export</span></h3>
+            <h3 className="text-xl font-bold mb-4">INDI<span className="text-accent-500">BRIDGE</span></h3>
             <p className="text-gray-400 mb-4">
               Your one-stop destination for quality products from around the world. We connect buyers and sellers globally.
             </p>
@@ -103,7 +103,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center">
                 <FaPhone className="text-primary-400 mr-3" />
-                <span className="text-gray-400">+1 (555) 123-4567</span>
+                <span className="text-gray-400">+91 63553 38791</span>
               </li>
               <li className="flex items-center">
                 <FaEnvelope className="text-primary-400 mr-3" />
@@ -119,7 +119,7 @@ const Footer = () => {
         {/* Footer Bottom */}
         <div className="flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-500 text-sm mb-4 md:mb-0">
-            &copy; {new Date().getFullYear()} ImportExport. All rights reserved.
+            &copy; {new Date().getFullYear()} INDIBRIDGE. All rights reserved.
           </p>
           <div className="flex space-x-6">
             <Link to="/privacy" className="text-gray-500 text-sm hover:text-white transition-colors">

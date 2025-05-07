@@ -65,7 +65,17 @@ const CustomProductCard = memo(({ product, onRequestQuote, onProductClick, viewM
               e.target.onerror = null;
               setImageError(true);
               setImageLoaded(true);
-              e.target.src = '/images/category-electronics-new.svg';
+              // Use specific category image based on product category
+              if (product.category && (product.category.toLowerCase() === 'Ayurvedic' || product.category.toLowerCase().includes('Ayurvedic'))) {
+                // Use absolute path for Ayurveda image to ensure it loads correctly
+                e.target.src = `${window.location.origin}/images/industries/ayurveda.svg`;
+              } else if (product.categoryImage) {
+                // Use absolute path for category image
+                e.target.src = `${window.location.origin}${product.categoryImage}`;
+              } else {
+                // Default fallback
+                e.target.src = `${window.location.origin}/images/category-electronics-new.svg`;
+              }
             }}
             loading="lazy"
           />

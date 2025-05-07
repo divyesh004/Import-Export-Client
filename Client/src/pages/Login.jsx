@@ -2,14 +2,20 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaGoogle, FaShieldAlt } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import ReCAPTCHA from 'react-google-recaptcha';
+import { RECAPTCHA_SITE_KEY } from '../config/env';
 
 const Login = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [captchaValue, setCaptchaValue] = useState(null);
+  const [captchaError, setCaptchaError] = useState('');
   const { login, googleLogin, showNotification } = useAuth();
   const navigate = useNavigate();
+  
+  // Using reCAPTCHA site key from environment configuration
 
   // Login validation schema
   const loginSchema = Yup.object().shape({
@@ -19,18 +25,34 @@ const Login = () => {
     password: Yup.string()
       .required('Password is required')
   });
+  
+  // Handle reCAPTCHA change
+  const handleCaptchaChange = (value) => {
+    setCaptchaValue(value);
+    setCaptchaError('');
+  };
 
   // Handle form submission
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       setError('');
+      setCaptchaError('');
       setIsLoading(true);
       
-      await login(values.email, values.password);
+      // Verify reCAPTCHA
+      if (!captchaValue) {
+        setCaptchaError('Please complete the security verification');
+        setIsLoading(false);
+        setSubmitting(false);
+        return;
+      }
+      
+      // Add captcha token to the login request
+      await login(values.email, values.password, captchaValue);
       showNotification('Login successful!', 'success');
       navigate('/profile');
     } catch (err) {
-      // More user-friendly error messages in Hindi
+      // More user-friendly error messages
       let errorMessage = 'Unable to sign in at this time. Please try again.';
       
       if (err.error) {
@@ -40,6 +62,9 @@ const Login = () => {
           errorMessage = 'This email is not registered. Please check your email or create an account.';
         } else if (err.error.includes('many attempts')) {
           errorMessage = 'Too many unsuccessful login attempts. Please try again later or reset your password.';
+        } else if (err.error.includes('captcha') || err.error.includes('recaptcha')) {
+          errorMessage = 'Security verification failed. Please try again.';
+          setCaptchaError('Security verification failed. Please try again.');
         }
       }
       
@@ -101,7 +126,7 @@ const Login = () => {
             )}
             
             <Formik
-              initialValues={{ email: '', password: '' }}
+              initialValues={{ email: '', password: '', recaptcha: '' }}
               validationSchema={loginSchema}
               onSubmit={handleSubmit}
             >
@@ -146,6 +171,25 @@ const Login = () => {
                     <ErrorMessage name="password" component="div" className="mt-1 text-red-600 text-sm font-medium" />
                   </div>
                   
+                  {/* reCAPTCHA */}
+                  <div className="mt-6 mb-4">
+                    <div className="flex flex-col items-center">
+                      <div className="mb-2 flex items-center">
+                        <FaShieldAlt className="text-primary-500 mr-2" />
+                        <span className="text-sm text-gray-600">Security Verification</span>
+                      </div>
+                      <div className="flex justify-center">
+                        <ReCAPTCHA
+                          sitekey={RECAPTCHA_SITE_KEY}
+                          onChange={handleCaptchaChange}
+                        />
+                      </div>
+                      {captchaError && (
+                        <div className="mt-2 text-red-600 text-sm font-medium">{captchaError}</div>
+                      )}
+                    </div>
+                  </div>
+                  
                   <button
                     type="submit"
                     disabled={isSubmitting || isLoading}
@@ -165,27 +209,7 @@ const Login = () => {
               )}
             </Formik>
             
-            <div className="mt-8">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
-                </div>
-              </div>
-              
-              <div className="mt-6">
-                <button
-                  onClick={handleGoogleLogin}
-                  className="w-full flex items-center justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 transform hover:-translate-y-0.5"
-                >
-                  <FaGoogle className="text-red-600 mr-2" />
-                  Sign in with Google
-                </button>
-              </div>
-            </div>
-            
+        
             <div className="mt-8 text-center">
               <p className="text-gray-600">
                 Don't have an account?{' '}

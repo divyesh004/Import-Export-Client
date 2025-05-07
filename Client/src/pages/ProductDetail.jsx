@@ -574,7 +574,7 @@ const ProductDetail = ({ addToCart }) => {
           <div className="flex flex-col lg:flex-row">
             {/* Product Images Section */}
             <div className="lg:w-1/2 p-4 sm:p-6 bg-gray-50">
-              {/* Main Image with Zoom Effect */}
+              {/* Main Image with Zoom Effect - Optimized for Mobile */}
               <div className="relative bg-white rounded-xl overflow-hidden mb-4 aspect-square sm:aspect-auto sm:h-[400px] md:h-[500px] flex items-center justify-center group shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300">
                 <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
                   <motion.img 
@@ -588,12 +588,15 @@ const ProductDetail = ({ addToCart }) => {
                       transition: 'transform 0.3s ease-out'
                     }}
                     onMouseMove={(e) => {
-                      const bounds = e.currentTarget.getBoundingClientRect();
-                      const x = (e.clientX - bounds.left) / bounds.width;
-                      const y = (e.clientY - bounds.top) / bounds.height;
-                      
-                      e.currentTarget.style.transformOrigin = `${x * 100}% ${y * 100}%`;
-                      e.currentTarget.style.transform = 'scale(2)';
+                      // Only apply zoom effect on non-touch devices (desktop)
+                      if (window.matchMedia('(hover: hover)').matches) {
+                        const bounds = e.currentTarget.getBoundingClientRect();
+                        const x = (e.clientX - bounds.left) / bounds.width;
+                        const y = (e.clientY - bounds.top) / bounds.height;
+                        
+                        e.currentTarget.style.transformOrigin = `${x * 100}% ${y * 100}%`;
+                        e.currentTarget.style.transform = 'scale(2)';
+                      }
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'scale(1)';
@@ -605,33 +608,45 @@ const ProductDetail = ({ addToCart }) => {
                     }}
                   />
                 
-                  {/* Image Navigation Arrows with improved styling */}
+                  {/* Image Navigation Arrows with improved styling for mobile */}
                   <button 
                     onClick={prevImage}
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-primary-600 hover:text-white p-3 rounded-full shadow-md transition-all hover:scale-110 z-10 text-primary-600"
+                    className="absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-primary-600 hover:text-white p-2 sm:p-3 rounded-full shadow-md transition-all hover:scale-110 z-10 text-primary-600 text-sm sm:text-base"
                     aria-label="Previous image"
                   >
                     <FaChevronLeft />
                   </button>
                   <button 
                     onClick={nextImage}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-primary-600 hover:text-white p-3 rounded-full shadow-md transition-all hover:scale-110 z-10 text-primary-600"
+                    className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-primary-600 hover:text-white p-2 sm:p-3 rounded-full shadow-md transition-all hover:scale-110 z-10 text-primary-600 text-sm sm:text-base"
                     aria-label="Next image"
                   >
                     <FaChevronRight />
                   </button>
+                  
+                  {/* Mobile Image Indicator Dots */}
+                  <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-2 sm:hidden">
+                    {product.images.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedImage(index)}
+                        className={`w-2 h-2 rounded-full ${selectedImage === index ? 'bg-primary-600' : 'bg-gray-300'}`}
+                        aria-label={`Go to image ${index + 1}`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
               
-              {/* Thumbnail Images - Scrollable on mobile with active indicator */}
-              <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide justify-center sm:justify-start">
+              {/* Thumbnail Images - Optimized for Mobile */}
+              <div className="flex space-x-2 sm:space-x-3 overflow-x-auto pb-2 scrollbar-hide justify-start px-1 sm:px-0 -mx-1 sm:mx-0">
                 {product.images.map((image, index) => (
                   <motion.button 
                     key={index} 
                     onClick={() => setSelectedImage(index)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === index ? 'border-primary-500 ring-2 ring-primary-200' : 'border-transparent hover:border-gray-300'}`}
+                    className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === index ? 'border-primary-500 ring-2 ring-primary-200' : 'border-transparent hover:border-gray-300'}`}
                     aria-label={`View image ${index + 1}`}
                   >
                     <div className="w-full h-full flex items-center justify-center bg-white">
@@ -648,6 +663,13 @@ const ProductDetail = ({ addToCart }) => {
                     </div>
                   </motion.button>
                 ))}
+              </div>
+              
+              {/* Mobile Scroll Indicator */}
+              <div className="flex justify-center mt-2 sm:hidden">
+                <div className="h-1 w-16 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary-500 w-1/3 rounded-full animate-pulse"></div>
+                </div>
               </div>
             </div>
             

@@ -34,7 +34,12 @@ export const fetchIndustries = async () => {
 // Mock industries data for fallback
 const getMockIndustries = () => {
   return [
-    'Ayurveda',
+    'Ayurvedic',
+    'Beauty',
+    'Electronics',
+    'Fashion',
+    'Home',
+    'Sports'
   ];
 };
 
@@ -81,7 +86,7 @@ const getMockCategories = (industry) => {
       { name: 'Bath & Body', count: 24 },
       { name: 'Tools & Accessories', count: 15 },
     ],
-    'Ayurveda': [
+    'Ayurvedic': [
       { name: 'Shampoo', count: 25 },
       { name: 'Hair Treatment', count: 18 },
       { name: 'Hair Oil', count: 22 },
