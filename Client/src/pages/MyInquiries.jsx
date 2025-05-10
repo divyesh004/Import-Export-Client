@@ -271,9 +271,9 @@ const MyInquiries = () => {
     if (inquiryElement) {
       inquiryElement.scrollIntoView({ behavior: 'smooth' });
       // Add highlight effect
-      inquiryElement.classList.add('bg-yellow-50');
+      inquiryElement.classList.add('bg-accent-50');
       setTimeout(() => {
-        inquiryElement.classList.remove('bg-yellow-50');
+        inquiryElement.classList.remove('bg-accent-50');
       }, 2000);
     }
   };
@@ -474,7 +474,7 @@ const MyInquiries = () => {
       const style = document.createElement('style');
       style.id = 'chat-styles';
       style.innerHTML = `
-        .bg-yellow-50 {
+        .bg-accent-50 {
           background-color: #fefce8;
           transition: background-color 1s ease;
         }
@@ -689,7 +689,7 @@ const MyInquiries = () => {
                     </h3>
                     <span className={`text-xs px-2 py-0.5 sm:py-1 rounded-full ${
                       productInquiries.some(inq => inq.status === 'pending')
-                        ? 'bg-yellow-100 text-yellow-800'
+                        ? 'bg-accent-100 text-accent-800'
                         : 'bg-green-100 text-green-800'
                     }`}>
                       {productInquiries.some(inq => inq.status === 'pending') ? 'Pending' : 'Answered'}

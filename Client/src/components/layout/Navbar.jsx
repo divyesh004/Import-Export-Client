@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
+import logoImage from "/images/Indibridge_Logo_Flat_Vector_Design-removebg-preview.png";
 import {
   FaUser,
   FaBars,
@@ -320,9 +321,9 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto ">
         {/* Main Navbar Row */}
-        <div className="flex justify-between items-center py-3 sm:py-3 md:py-4 relative">
+        <div className="flex justify-between items-center relative">
           {/* Logo */}
           <Link
             to="/"
@@ -330,16 +331,16 @@ const Navbar = () => {
           >
             <div className="flex items-center">
               <img 
-                src="images/indibridge-logo.png" 
+                src={logoImage} 
                 alt="IndiBridge Logo" 
-                className="h-10 md:h-12 w-auto mr-2" 
+                className="h-16 md:h-20 lg:h-24 w-auto mr-2" 
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.style.display = 'none';
                   document.getElementById('fallback-logo-text').style.display = 'block';
                 }}
               />
-              <h3 id="fallback-logo-text" className="text-xl font-bold" style={{display: 'none'}}>
+              <h3 id="fallback-logo-text" className="text-2xl md:text-3xl lg:text-4xl font-bold" style={{display: 'none'}}>
                 INDI<span className="text-accent-500">BRIDGE</span>
               </h3>
             </div>

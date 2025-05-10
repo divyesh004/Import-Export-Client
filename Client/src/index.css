@@ -8,7 +8,7 @@
     scroll-behavior: smooth;
   }
   body {
-    @apply font-sans text-gray-800 bg-gray-50;
+    @apply font-sans text-secondary-900 bg-secondary-50;
   }
 }
 
@@ -20,18 +20,21 @@
     @apply px-4 py-2 font-medium transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
   .btn-primary {
-    @apply text-white bg-primary-600 hover:bg-primary-700 focus:ring-primary-500;
+    @apply text-white bg-primary-800 hover:bg-primary-900 focus:ring-primary-700;
   }
   .btn-secondary {
     @apply text-white bg-secondary-600 hover:bg-secondary-700 focus:ring-secondary-500;
   }
   .btn-accent {
-    @apply text-white bg-accent-600 hover:bg-accent-700 focus:ring-accent-500;
+    @apply text-white bg-accent-400 hover:bg-accent-500 focus:ring-accent-300;
+  }
+  .btn-success {
+    @apply text-white bg-success-500 hover:bg-success-600 focus:ring-success-400;
   }
   .card {
     @apply overflow-hidden transition-shadow bg-white rounded-lg shadow-sm hover:shadow-md;
   }
   .input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-800 focus:border-primary-800;
   }
 }

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FaStar, FaRegStar, FaStarHalfAlt, FaShoppingCart, FaHeart } from 'react-icons/fa';
+import { FaStar, FaRegStar, FaStarHalfAlt, FaShoppingCart, FaHeart, FaShieldAlt } from 'react-icons/fa';
 import { useState } from 'react';
 
 const ProductCard = ({ product, addToCart, addToWishlist }) => {
@@ -24,18 +24,18 @@ const ProductCard = ({ product, addToCart, addToWishlist }) => {
     
     // Add full stars
     for (let i = 0; i < fullStars; i++) {
-      stars.push(<FaStar key={`full-${i}`} className="text-yellow-400" />);
+      stars.push(<FaStar key={`full-${i}`} className="text-accent-500" />);
     }
     
     // Add half star if needed
     if (hasHalfStar) {
-      stars.push(<FaStarHalfAlt key="half" className="text-yellow-400" />);
+      stars.push(<FaStarHalfAlt key="half" className="text-accent-500" />);
     }
     
     // Add empty stars
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
     for (let i = 0; i < emptyStars; i++) {
-      stars.push(<FaRegStar key={`empty-${i}`} className="text-yellow-400" />);
+      stars.push(<FaRegStar key={`empty-${i}`} className="text-accent-500" />);
     }
     
     return stars;
@@ -49,7 +49,7 @@ const ProductCard = ({ product, addToCart, addToWishlist }) => {
   
   return (
     <div 
-      className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 h-full card-transition"
+      className=" rounded-xl shadow-md overflow-hidden transition-all duration-300 h-full card-transition"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -67,6 +67,10 @@ const ProductCard = ({ product, addToCart, addToWishlist }) => {
               {product.discount}% OFF
             </div>
           )}
+          <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center">
+            <FaShieldAlt className="mr-1" size={12} />
+            <span>Verified</span>
+          </div>
         </div>
         
         <div className="p-5">

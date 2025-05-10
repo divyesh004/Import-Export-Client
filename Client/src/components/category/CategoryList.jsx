@@ -76,7 +76,7 @@ const CategoryList = () => {
             {error}
           </div>
         ) : categories.length === 0 ? (
-          <div className="bg-yellow-50 text-yellow-700 p-4 rounded-md">
+          <div className="bg-accent-50 text-accent-700 p-4 rounded-md">
             No categories found for {industryParam} industry.
           </div>
         ) : (

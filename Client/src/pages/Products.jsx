@@ -32,7 +32,7 @@ const initApi = (toggleLoginPopup, showNotification) => {
 
 
 // Categories with icons for Flipkart-style display
-const categories = [
+export const categories = [
   { id: 'all', name: 'All Categories', icon: FaThLarge, image: '/images/category-electronics-new.svg', color: '#2874f0' },
   { id: 'shampoo', name: 'Shampoo', icon: FaWater, image: '/images/category-beauty-health-new.svg', color: '#ff9f00' },
   { id: 'hair-treatment', name: 'Hair Treatment', icon: FaLeaf, image: '/images/category-beauty-health-new.svg', color: '#fb641b' },
@@ -560,7 +560,7 @@ const Products = () => {
             
             {/* Products Grid Skeleton */}
             <div className="flex-1 w-full transition-all duration-300">
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2 sm:gap-3">
                 {Array(8).fill(0).map((_, item) => (
                   <div key={item} className="bg-white p-0.5 hover:z-10 hover:relative">
                     <div className="card bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -598,14 +598,45 @@ const Products = () => {
     <div className="flex flex-col bg-gray-50 min-h-screen">
       {/* Fixed Category Bar - For desktop and mobile - Only show when no industry or category is selected */}
       {showCategoryFilter && (
-        <div className="sticky top-0 left-0 right-0 z-30 bg-white shadow-md w-full">
-          <div className="w-full overflow-x-auto py-3 px-1 sm:px-2 md:px-4 max-w-screen-2xl mx-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+        <div className="sticky top-0 left-0 right-0 z-30 bg-white shadow-sm w-full">
+          <div className="w-full overflow-x-auto py-3 px-2 sm:px-3 max-w-screen-2xl mx-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
             <style jsx>{`
               .category-scroll::-webkit-scrollbar {
                 display: none;
               }
+              
+              @media (min-width: 640px) {
+                .category-item.scrolled .category-icon {
+                  display: none;
+                }
+                
+                .category-item.scrolled .category-text {
+                  margin-top: 0;
+                }
+              }
             `}</style>
-            <div className="flex space-x-3 sm:space-x-4 md:space-x-5 w-full category-scroll sm:justify-start md:justify-center" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingLeft: '0.5rem', paddingRight: '0.5rem', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', display: 'flex', flexWrap: 'nowrap' }}>
+            <div 
+              className="flex space-x-3 sm:space-x-4 w-full category-scroll justify-center" 
+              style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingLeft: '0.75rem', paddingRight: '0.75rem', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', display: 'flex', flexWrap: 'nowrap' }}
+              ref={(el) => {
+                if (el) {
+                  const handleScroll = () => {
+                    const scrolled = el.scrollTop > 10;
+                    const categoryItems = document.querySelectorAll('.category-item');
+                    categoryItems.forEach(item => {
+                      if (scrolled) {
+                        item.classList.add('scrolled');
+                      } else {
+                        item.classList.remove('scrolled');
+                      }
+                    });
+                  };
+                  
+                  window.addEventListener('scroll', handleScroll);
+                  return () => window.removeEventListener('scroll', handleScroll);
+                }
+              }}
+            >
               {visibleCategories.map((category) => (
                 <div 
                   key={category.id}
@@ -615,16 +646,18 @@ const Products = () => {
                     // Close mobile filter if open
                     if (isFilterOpen) setIsFilterOpen(false);
                   }}
-                  className={`flex flex-col items-center justify-center p-1 sm:p-1.5 md:p-2 cursor-pointer transition-colors flex-shrink-0 ${selectedCategory === category.name ? 'opacity-100' : 'opacity-80'}`}
-                  style={{ scrollSnapAlign: 'center', minWidth: '70px', maxWidth: '90px' }}
+                  className={`category-item flex flex-col items-center justify-center p-1 cursor-pointer transition-colors flex-shrink-0 ${selectedCategory === category.name ? 'opacity-100' : 'opacity-80 hover:opacity-100'}`}
+                  style={{ scrollSnapAlign: 'center', minWidth: '75px', maxWidth: '90px' }}
                 >
                   <div 
-                    className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center mb-1 shadow-sm transition-all duration-200 ${selectedCategory === category.name ? 'border-2 border-blue-500 scale-110' : 'border border-gray-100'}`}
+                    className={`category-icon w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-sm transition-all duration-200 ${selectedCategory === category.name ? 'border-2 border-blue-500 scale-105' : 'border border-gray-100'}`}
                     style={{ backgroundColor: `${category.color}15` }}
                   >
-                    <category.icon className="text-sm sm:text-base md:text-lg" style={{ color: category.color }} />
+                    <category.icon className="text-lg" style={{ color: category.color }} />
                   </div>
-                  <span className={`text-[8px] sm:text-[10px] md:text-xs mt-1 whitespace-nowrap font-medium text-center transition-colors duration-200 ${selectedCategory === category.name ? 'text-blue-600' : 'text-gray-700'}`}>{category.name}</span>
+                  <div className="category-text h-8 flex items-center justify-center mt-1.5">
+                    <span className={`text-xs sm:text-sm whitespace-nowrap font-medium text-center transition-colors duration-200 ${selectedCategory === category.name ? 'text-blue-600' : 'text-gray-700'}`}>{category.name}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -720,7 +753,7 @@ const Products = () => {
           </div>
         
         {/* Products Grid */}
-        <div className={`grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 xs:gap-3 sm:gap-4 ${viewMode === 'list' ? '!grid-cols-1' : ''}`}>
+        <div className={`grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-2 xs:gap-3 sm:gap-4 ${viewMode === 'list' ? '!grid-cols-1' : ''}`}>
           {visibleProducts.length > 0 ? (
             visibleProducts.map((product) => (
               <CustomProductCard
@@ -760,7 +793,7 @@ const Products = () => {
         {/* Loading indicator and observer target with skeleton */}
         <div ref={observerTarget} className="flex justify-center py-4 mt-4 w-full">
           {loadingMore && (
-            <div className="w-full grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 xs:gap-3 sm:gap-4">
+            <div className="w-full grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-2 xs:gap-3 sm:gap-4">
               {Array(4).fill(0).map((_, index) => (
                 <div key={index} className="bg-white p-0.5 hover:z-10 hover:relative">
                   <div className="card bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -885,7 +918,7 @@ const Products = () => {
                               htmlFor={`rating-mobile-${index}`} 
                               className={`${selectedRating && selectedRating.value === option.value ? 'text-primary-700 font-medium' : 'text-gray-700'} text-base cursor-pointer flex items-center`}
                             >
-                              {option.label} <FaStar className="text-yellow-400 ml-1" />
+                              {option.label} <FaStar className="text-accent-500 ml-1" />
                                   </label>
                                 </div>
                               ))}

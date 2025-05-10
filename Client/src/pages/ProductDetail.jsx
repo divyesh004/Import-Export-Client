@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { FaStar, FaShoppingCart, FaHeart, FaShare, FaChevronLeft, FaChevronRight, FaFileAlt, FaInfoCircle, FaShieldAlt, FaTruck, FaExchangeAlt, FaRegClock } from 'react-icons/fa';
+import { FaStar,FaTimesCircle, FaShoppingCart, FaHeart, FaShare, FaChevronLeft, FaChevronRight, FaFileAlt, FaInfoCircle, FaShieldAlt, FaTruck, FaExchangeAlt, FaRegClock } from 'react-icons/fa';
 import Skeleton from '../components/common/Skeleton';
 import Loading from '../components/common/Loading';
 import RTQForm from '../components/common/RTQForm';
+import BackToTopButton from '../components/common/BackToTopButton';
 import RelatedProductsSlider from '../components/product/RelatedProductsSlider';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -532,8 +533,8 @@ const ProductDetail = ({ addToCart }) => {
     return (
       <div className="py-8">
         <div className="container">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-bold text-yellow-600 mb-4">Product Not Found</h2>
+          <div className="bg-accent-50 border border-accent-200 rounded-lg p-8 text-center">
+            <h2 className="text-2xl font-bold text-accent-600 mb-4">Product Not Found</h2>
             <p className="text-gray-700 mb-6">The product you are looking for does not exist or has been removed.</p>
             <Link to="/products" className="btn bg-primary-600 text-white hover:bg-primary-700 inline-block">
               Browse Products
@@ -545,254 +546,181 @@ const ProductDetail = ({ addToCart }) => {
   }
   
   return (
-    <div className="py-4 sm:py-8 bg-gradient-to-b from-gray-50 to-white min-h-screen">
-      <div className="container px-4 sm:px-6 mx-auto">
-        {/* Breadcrumb - Hidden on mobile, visible on larger screens */}
-        <div className="hidden sm:flex items-center text-sm text-gray-500 mb-4 sm:mb-6 overflow-x-auto whitespace-nowrap bg-white p-3 rounded-lg shadow-sm">
-          <Link to="/" className="hover:text-primary-600 transition-colors font-medium">Home</Link>
-          <span className="mx-2 text-gray-400">/</span>
-          <Link to="/products" className="hover:text-primary-600 transition-colors font-medium">Products</Link>
-          <span className="mx-2 text-gray-400">/</span>
-          <Link to={`/products?category=${product.category}`} className="hover:text-primary-600 transition-colors font-medium">{product.category}</Link>
-          <span className="mx-2 text-gray-400">/</span>
-          <span className="text-primary-600 font-medium truncate max-w-[150px]">{product.name}</span>
+    <div className="py-0 bg-gray-100 min-h-screen">
+      <div className="container px-0 sm:px-4 mx-auto max-w-7xl">
+        {/* Simple Breadcrumb - Hidden on mobile */}
+        <div className="hidden sm:flex items-center text-xs text-gray-500 py-2 px-4">
+          <Link to="/" className="hover:text-blue-500 transition-colors">Home</Link>
+          <span className="mx-1 text-gray-400">/</span>
+          <Link to="/products" className="hover:text-blue-500 transition-colors">Products</Link>
+          <span className="mx-1 text-gray-400">/</span>
+          <span className="text-blue-500 truncate max-w-[150px]">{product.name}</span>
         </div>
 
-        {/* Mobile Back Button - Only visible on mobile */}
-        <div className="sm:hidden mb-4">
+        {/* Mobile Back Button */}
+        <div className="sm:hidden p-3 bg-white">
           <Link 
             to="/products" 
-            className="inline-flex items-center bg-white px-4 py-2 rounded-full shadow-sm text-primary-600 font-medium"
+            className="inline-flex items-center text-blue-500"
           >
-            <FaChevronLeft className="mr-2" size={14} />
-            Back to Products
+            <FaChevronLeft className="mr-1" size={12} />
+            Back
           </Link>
         </div>
 
-        {/* Product Details Card */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-6 sm:mb-8 border border-gray-100">
-          <div className="flex flex-col lg:flex-row">
-            {/* Product Images Section */}
-            <div className="lg:w-1/2 p-4 sm:p-6 bg-gray-50">
-              {/* Main Image with Zoom Effect - Optimized for Mobile */}
-              <div className="relative bg-white rounded-xl overflow-hidden mb-4 aspect-square sm:aspect-auto sm:h-[400px] md:h-[500px] flex items-center justify-center group shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300">
-                <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
-                  <motion.img 
-                    key={selectedImage}
-                    src={product.images[selectedImage]} 
-                    alt={product.name} 
-                    className="max-w-[90%] max-h-[90%] object-contain p-2 transition-transform duration-300 cursor-zoom-in fade-in"
-                    style={{
-                      transformOrigin: 'center',
-                      transform: 'scale(1)',
-                      transition: 'transform 0.3s ease-out'
-                    }}
-                    onMouseMove={(e) => {
-                      // Only apply zoom effect on non-touch devices (desktop)
-                      if (window.matchMedia('(hover: hover)').matches) {
-                        const bounds = e.currentTarget.getBoundingClientRect();
-                        const x = (e.clientX - bounds.left) / bounds.width;
-                        const y = (e.clientY - bounds.top) / bounds.height;
-                        
-                        e.currentTarget.style.transformOrigin = `${x * 100}% ${y * 100}%`;
-                        e.currentTarget.style.transform = 'scale(2)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
-                    loading="lazy"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
-                    }}
-                  />
-                
-                  {/* Image Navigation Arrows with improved styling for mobile */}
-                  <button 
-                    onClick={prevImage}
-                    className="absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-primary-600 hover:text-white p-2 sm:p-3 rounded-full shadow-md transition-all hover:scale-110 z-10 text-primary-600 text-sm sm:text-base"
-                    aria-label="Previous image"
-                  >
-                    <FaChevronLeft />
-                  </button>
-                  <button 
-                    onClick={nextImage}
-                    className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-primary-600 hover:text-white p-2 sm:p-3 rounded-full shadow-md transition-all hover:scale-110 z-10 text-primary-600 text-sm sm:text-base"
-                    aria-label="Next image"
-                  >
-                    <FaChevronRight />
-                  </button>
-                  
-                  {/* Mobile Image Indicator Dots */}
-                  <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-2 sm:hidden">
-                    {product.images.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedImage(index)}
-                        className={`w-2 h-2 rounded-full ${selectedImage === index ? 'bg-primary-600' : 'bg-gray-300'}`}
-                        aria-label={`Go to image ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-                </div>
+        {/* Product Details - Flipkart Style */}
+        <div className="mb-2">
+          <div className="flex flex-col lg:flex-row bg-white">
+            {/* Product Images Section - Flipkart Style */}
+            <div className="lg:w-[40%] border-r border-gray-200 p-2 sm:p-4">
+              {/* Main Image - Flipkart Style */}
+              <div className="relative bg-white overflow-hidden mb-1 aspect-square flex items-center justify-center sticky top-0">
+                <motion.img 
+                  key={selectedImage}
+                  src={product.images[selectedImage]} 
+                  alt={product.name} 
+                  className="max-w-full max-h-full object-contain transition-opacity duration-300"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  loading="lazy"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
+                  }}
+                />
+              
+                {/* Simplified Navigation Arrows */}
+                <button 
+                  onClick={prevImage}
+                  className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white/90 p-2 rounded-r-full z-10 text-gray-700 hover:text-blue-500 shadow-md"
+                  aria-label="Previous image"
+                >
+                  <FaChevronLeft size={16} />
+                </button>
+                <button 
+                  onClick={nextImage}
+                  className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white/90 p-2 rounded-l-full z-10 text-gray-700 hover:text-blue-500 shadow-md"
+                  aria-label="Next image"
+                >
+                  <FaChevronRight size={16} />
+                </button>
               </div>
               
-              {/* Thumbnail Images - Optimized for Mobile */}
-              <div className="flex space-x-2 sm:space-x-3 overflow-x-auto pb-2 scrollbar-hide justify-start px-1 sm:px-0 -mx-1 sm:mx-0">
+              {/* Thumbnail Images - Flipkart Style */}
+              <div className="flex overflow-x-auto gap-1 py-2 hide-scrollbar">
                 {product.images.map((image, index) => (
-                  <motion.button 
-                    key={index} 
+                  <button
+                    key={index}
                     onClick={() => setSelectedImage(index)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === index ? 'border-primary-500 ring-2 ring-primary-200' : 'border-transparent hover:border-gray-300'}`}
-                    aria-label={`View image ${index + 1}`}
+                    className={`min-w-[60px] h-[60px] border rounded overflow-hidden flex items-center justify-center ${selectedImage === index ? 'border-blue-500' : 'border-gray-200'}`}
                   >
-                    <div className="w-full h-full flex items-center justify-center bg-white">
-                      <img 
-                        src={image} 
-                        alt={`${product.name} thumbnail ${index + 1}`} 
-                        className="max-w-[90%] max-h-[90%] object-contain"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://via.placeholder.com/100x100?text=No+Image';
-                        }}
-                      />
-                    </div>
-                  </motion.button>
+                    <img 
+                      src={image} 
+                      alt={`${product.name} - Thumbnail ${index + 1}`} 
+                      className="max-w-full max-h-full object-contain"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://via.placeholder.com/80x80?text=No+Image';
+                      }}
+                    />
+                  </button>
                 ))}
               </div>
               
-              {/* Mobile Scroll Indicator */}
-              <div className="flex justify-center mt-2 sm:hidden">
-                <div className="h-1 w-16 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary-500 w-1/3 rounded-full animate-pulse"></div>
-                </div>
+              {/* Action Buttons - Mobile Only */}
+              <div className="flex gap-2 mt-4 lg:hidden">
+                <button 
+                  onClick={() => addToCart(product, quantity)}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-sm font-medium flex items-center justify-center"
+                  disabled={product.stock <= 0}
+                >
+                  <FaShoppingCart className="mr-2" />
+                  Add to Cart
+                </button>
+                
+                <button 
+                  onClick={() => setRtqModalOpen(true)}
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-sm font-medium flex items-center justify-center"
+                >
+                  <FaFileAlt className="mr-2" />
+                  Request Quote
+                </button>
               </div>
             </div>
             
-            {/* Product Info Section with Improved Layout */}
-            <div className="lg:w-1/2 p-4 sm:p-6 lg:border-l border-gray-100">
-              {/* Product Title with Animation */}
-              <motion.h1 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 leading-tight"
-              >
-                {product.name}
-              </motion.h1>
+            {/* Product Info Section - Flipkart Style */}
+            <div className="lg:w-[60%] p-4">
+              {/* Product Title */}
+              <h1 className="text-xl sm:text-2xl font-medium text-gray-800 mb-1">{product.name}</h1>
               
-              {/* Rating with Improved Styling */}
-              <div className="flex items-center mb-4">
-                <div className="flex text-yellow-400">
-                  {[...Array(5)].map((_, i) => (
-                    <FaStar 
-                      key={i} 
-                      className={i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}
-                      size={18}
-                    />
-                  ))}
+              {/* Product Rating - Flipkart Style */}
+              <div className="flex items-center mb-3">
+                <div className="flex items-center bg-green-600 text-white px-2 py-0.5 rounded-sm text-sm mr-2">
+                  <span className="font-medium mr-1">{product.rating}</span>
+                  <FaStar size={12} />
                 </div>
-                <span className="text-gray-600 ml-2 text-sm font-medium">{product.rating.toFixed(1)} ({product.reviews.length} reviews)</span>
+                <span className="text-sm text-gray-500">
+                  {product.reviews?.length || 0} Ratings & Reviews
+                </span>
               </div>
               
-              {/* Price with Better Discount Display */}
-              <div className="mb-6 flex items-center">
+              {/* Product Price - Flipkart Style */}
+              <div className="mb-4">
                 {product.discount > 0 ? (
-                  <>
-                    <span className="text-3xl sm:text-4xl font-bold text-primary-600">${discountedPrice}</span>
-                    <span className="ml-3 text-lg text-gray-500 line-through">${product.price.toFixed(2)}</span>
-                    <span className="ml-3 bg-red-100 text-red-700 px-2 py-1 rounded-full text-sm font-medium">
-                      {product.discount}% OFF
-                    </span>
-                  </>
+                  <div className="flex flex-wrap items-baseline">
+                    <span className="text-2xl font-medium text-gray-800">₹{discountedPrice}</span>
+                    <span className="text-sm text-gray-500 line-through ml-2">₹{product.price}</span>
+                    <span className="ml-2 text-green-600 font-medium text-sm">{product.discount}% Discount</span>
+                  </div>
                 ) : (
-                  <span className="text-3xl sm:text-4xl font-bold text-primary-600">${product.price.toFixed(2)}</span>
+                  <span className="text-2xl font-medium text-gray-800">₹{product.price}</span>
                 )}
               </div>
               
-              {/* Short Description with Better Styling */}
-              <div className="bg-gray-50 p-4 rounded-xl mb-6 border-l-4 border-primary-500">
-                <p className="text-gray-700">{product.description.split('.')[0] + '.'}</p>
+              {/* Product Availability - Flipkart Style */}
+              <div className="mb-4">
+                {product.stock > 0 ? (
+                  <div className="text-green-600 font-medium flex items-center">
+                    <FaCheckCircle className="mr-2" />
+                    In Stock ({product.stock})
+                  </div>
+                ) : (
+                  <div className="text-red-600 font-medium flex items-center">
+                    <FaTimesCircle className="mr-2" />
+                    {product.availability === 0 || product.availability === null ? "Out of Stock" : `Limited Availability (${product.availability})`}
+                  </div>
+                )}
               </div>
               
-              {/* Product Details in Card Format with Icons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                {/* Brand */}
-                <div className="bg-gray-50 p-4 rounded-xl flex items-start">
-                  <FaInfoCircle className="text-primary-500 mt-1 mr-3 flex-shrink-0" />
-                  <div>
-                    <span className="text-gray-500 text-sm block mb-1">Brand</span>
-                    <span className="text-gray-800 font-medium">{product.brand}</span>
-                  </div>
-                </div>
-                
-                {/* Availability - Dynamic */}
-                <div className="bg-gray-50 p-4 rounded-xl flex items-start">
-                  <FaRegClock className="text-primary-500 mt-1 mr-3 flex-shrink-0" />
-                  <div>
-                    <span className="text-gray-500 text-sm block mb-1">Availability</span>
-                    {(() => {
-                      // Check if availability is explicitly provided
-                      if (product.availability) {
-                        return <span className={`font-medium ${product.availability.toLowerCase().includes('in stock') || product.availability.toLowerCase().includes('available') ? 'text-green-600' : 'text-red-600'}`}>
-                          {product.availability}
-                        </span>;
-                      }
-                      // Fall back to stock-based availability
-                      else if (product.stock !== undefined) {
-                        if (product.stock > 10) {
-                          return <span className="text-green-600 font-medium">In Stock ({product.stock} available)</span>;
-                        } else if (product.stock > 0) {
-                          return <span className="text-orange-500 font-medium">Low Stock (Only {product.stock} left)</span>;
-                        } else {
-                          return <span className="text-red-600 font-medium">Out of Stock</span>;
-                        }
-                      }
-                      // Default fallback
-                      else {
-                        return <span className="text-gray-600 font-medium">Please inquire about availability</span>;
-                      }
-                    })()}
-                  </div>
-                </div>
-                
-                {/* Shipping */}
-                <div className="bg-gray-50 p-4 rounded-xl flex items-start">
-                  <FaTruck className="text-primary-500 mt-1 mr-3 flex-shrink-0" />
-                  <div>
-                    <span className="text-gray-500 text-sm block mb-1">Shipping</span>
-                    <span className="text-gray-800 font-medium">{product.shipping}</span>
-                  </div>
-                </div>
-                
-                {/* Return Policy */}
-                <div className="bg-gray-50 p-4 rounded-xl flex items-start">
-                  <FaExchangeAlt className="text-primary-500 mt-1 mr-3" />
-                  <div>
-                    <span className="text-gray-500 text-sm block mb-1">Return Policy</span>
-                    <span className="text-gray-800 font-medium">{product.returnPolicy}</span>
-                  </div>
-                </div>
+              {/* Product Highlights - Flipkart Style */}
+              <div className="mb-4">
+                <h2 className="text-base font-medium text-gray-800 mb-2">Highlights</h2>
+                <ul className="list-disc pl-5 space-y-1 text-gray-700">
+
+                  <li>Brand: <span className="font-medium">{product.brand}</span></li>
+                  <li>Category: <span className="font-medium">{product.category}</span></li>
+                  <li>Shipping: <span className="font-medium">{product.shipping}</span></li>
+                  <li>Return Policy: <span className="font-medium">{product.returnPolicy}</span></li>
+                </ul>
               </div>
               
-              {/* Quantity Selector with Improved Styling */}
-              <div className="mb-6">
-                <label className="text-gray-700 font-medium block mb-2">Quantity:</label>
-                <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden shadow-sm">
+              {/* Quantity Selector - Flipkart Style */}
+              <div className="flex items-center mb-6">
+                <span className="text-gray-600 mr-4">Quantity:</span>
+                <div className="flex items-center border border-gray-300 rounded">
                   <button 
                     onClick={() => handleQuantityChange(-1)}
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
+                    className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition-colors"
                     disabled={quantity <= 1}
                   >
                     -
                   </button>
-                  <span className="px-6 py-2 border-x border-gray-300 font-medium bg-white">{quantity}</span>
+                  <span className="px-3 py-1 border-x border-gray-300">{quantity}</span>
                   <button 
                     onClick={() => handleQuantityChange(1)}
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
+                    className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition-colors"
                     disabled={quantity >= product.stock}
                   >
                     +
@@ -800,90 +728,79 @@ const ProductDetail = ({ addToCart }) => {
                 </div>
               </div>
               
-              {/* Action Buttons with Improved Design */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <motion.button 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+              {/* Action Buttons - Desktop Only */}
+              <div className="hidden lg:flex gap-4 mb-6">
+                {/* Add to Cart Button */}
+                <button 
+                  onClick={() => addToCart(product, quantity)}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-sm font-medium flex items-center justify-center"
+                  disabled={product.stock <= 0}
+                >
+                  <FaShoppingCart className="mr-2" />
+                  Add to Cart
+                </button>
+                
+                {/* Request Quote Button */}
+                <button 
                   onClick={() => setRtqModalOpen(true)}
-                  className="btn bg-primary-600 text-white hover:bg-primary-700 flex items-center justify-center gap-2 py-3 rounded-lg transition-colors shadow-md hover:shadow-lg w-full font-medium"
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-sm font-medium flex items-center justify-center"
                 >
-                  <FaFileAlt />
-                  Request a Quote
-                </motion.button>
-                <motion.button 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={scrollToDescription}
-                  className="btn bg-accent-600 text-white hover:bg-accent-700 flex items-center justify-center gap-2 py-3 rounded-lg transition-colors shadow-md hover:shadow-lg w-full font-medium"
-                >
-                  View Description
-                </motion.button>
-                <div className="flex gap-4">
-                  <button 
-                    className="btn border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 py-3 rounded-lg transition-colors flex-1 hover:border-primary-500 hover:text-primary-600"
-                  >
-                    <FaHeart />
-                    <span className="hidden sm:inline">Wishlist</span>
-                  </button>
-                  <button 
-                    className="btn border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 py-3 rounded-lg transition-colors flex-1 hover:border-primary-500 hover:text-primary-600"
-                  >
-                    <FaShare />
-                    <span className="hidden sm:inline">Share</span>
-                  </button>
-                </div>
+                  <FaFileAlt className="mr-2" />
+                  Request Quote
+                </button>
               </div>
-
-              {/* Security Badge */}
-              <div className="flex items-center justify-center sm:justify-start bg-gray-50 p-3 rounded-lg text-gray-600 text-sm">
-                <FaShieldAlt className="text-primary-500 mr-2" />
-                <span>Secure transaction & Authentic products guaranteed</span>
+              
+              {/* Seller Info - Flipkart Style */}
+              <div className="border border-gray-200 rounded p-3 mb-4">
+                <h3 className="font-medium text-gray-800 mb-2">Seller Information</h3>
+                <div className="flex items-center text-sm">
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">Trusted Seller</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
         
-        {/* Product Tabs with Improved Design */}
-       
-          {/* Tab Navigation - Scrollable on mobile with better indicators */}
-          <div className="border-b border-gray-200 bg-gray-50" ref={descriptionRef}>
-            <div className="flex overflow-x-auto scrollbar-hide">
+        {/* Product Tabs - Flipkart Style */}
+        <div className="bg-white mt-2 mb-2" ref={descriptionRef}>
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-200">
+            <div className="flex overflow-x-auto hide-scrollbar">
               <button 
                 onClick={() => setActiveTab('description')}
-                className={`px-4 sm:px-6 py-4 font-medium whitespace-nowrap transition-colors flex-1 text-center text-sm sm:text-base relative
-                  ${activeTab === 'description' ? 'text-primary-600 bg-white' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-4 sm:px-6 py-3 font-medium whitespace-nowrap transition-colors flex-1 text-center text-sm sm:text-base relative
+                  ${activeTab === 'description' ? 'text-blue-500 bg-white' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Description
                 {activeTab === 'description' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600" />
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500" />
                 )}
               </button>
               <button 
                 onClick={() => setActiveTab('specification')}
-                className={`px-4 sm:px-6 py-4 font-medium whitespace-nowrap transition-colors flex-1 text-center text-sm sm:text-base relative
-                  ${activeTab === 'specification' ? 'text-primary-600 bg-white' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-4 sm:px-6 py-3 font-medium whitespace-nowrap transition-colors flex-1 text-center text-sm sm:text-base relative
+                  ${activeTab === 'specification' ? 'text-blue-500 bg-white' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                Specification
+                Specifications
                 {activeTab === 'specification' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600" />
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500" />
                 )}
               </button>
               <button 
                 onClick={() => setActiveTab('features')}
-                className={`px-4 sm:px-6 py-4 font-medium whitespace-nowrap transition-colors flex-1 text-center text-sm sm:text-base relative
-                  ${activeTab === 'features' ? 'text-primary-600 bg-white' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-4 sm:px-6 py-3 font-medium whitespace-nowrap transition-colors flex-1 text-center text-sm sm:text-base relative
+                  ${activeTab === 'features' ? 'text-blue-500 bg-white' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Features
                 {activeTab === 'features' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600" />
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500" />
                 )}
               </button>
             </div>
           </div>
           
 
-          {/* Tab Content */}
+          {/* Tab Content - Enhanced UI */}
           <div className="p-4 sm:p-6">
               {activeTab === 'description' && (
                 <motion.div
@@ -891,13 +808,88 @@ const ProductDetail = ({ addToCart }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="prose max-w-none"
+                  className="max-w-none"
                 >
-
-                  <p className="text-gray-700">{product.description}</p>
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                    <div className="bg-gradient-to-r from-blue-50 to-white px-6 py-4 border-b border-gray-200 flex items-center">
+                      <FaFileAlt className="text-blue-500 mr-3" />
+                      <h2 className="text-xl font-semibold text-gray-800">Product Description</h2>
+                    </div>
+                    <div className="p-6">
+                      {product.description ? (
+                        <div className="prose prose-blue max-w-none text-gray-700 leading-relaxed">
+                          {product.description.split('\n').map((paragraph, index) => (
+                            <p key={index} className="mb-4">{paragraph}</p>
+                          ))}
+                          
+                          <div className="mt-8 pt-6 border-t border-gray-200">
+                            <h3 className="text-lg font-semibold mb-4">Why Choose Our Products?</h3>
+                            <p className="mb-4">We pride ourselves on offering the highest quality products with exceptional service:</p>
+                            <ul className="list-disc pl-5 space-y-2">
+                              <li><span className="font-medium">Quality Guarantee</span> - All our products are 100% original with quality assurance</li>
+                              <li><span className="font-medium">Fast Shipping</span> - We offer quick delivery worldwide with package tracking</li>
+                              <li><span className="font-medium">Easy Returns</span> - Hassle-free 7-day return policy for your peace of mind</li>
+                              <li><span className="font-medium">24/7 Support</span> - Our customer service team is always available to assist you</li>
+                            </ul>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <FaInfoCircle className="mx-auto mb-3 text-gray-400" size={24} />
+                          <p>No description available for this product.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Service Specifications */}
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                    <div className="bg-gradient-to-r from-blue-50 to-white px-6 py-4 border-b border-gray-200 flex items-center">
+                      <FaShieldAlt className="text-blue-500 mr-3" />
+                      <h2 className="text-xl font-semibold text-gray-800">Service Specifications</h2>
+                    </div>
+                    <div className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <div className="font-medium text-gray-800 mb-2 flex items-center">
+                            <span className="h-6 w-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2 text-xs">1</span>
+                            Quality Assurance
+                          </div>
+                          <div className="text-gray-600">
+                            100% original products with manufacturer warranty and quality certification
+                          </div>
+                        </div>
+                        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <div className="font-medium text-gray-800 mb-2 flex items-center">
+                            <span className="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center mr-2 text-xs">2</span>
+                            Shipping Details
+                          </div>
+                          <div className="text-gray-600">
+                            Worldwide shipping with tracking, estimated delivery time: 3-7 business days
+                          </div>
+                        </div>
+                        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <div className="font-medium text-gray-800 mb-2 flex items-center">
+                            <span className="h-6 w-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mr-2 text-xs">3</span>
+                            Return Policy
+                          </div>
+                          <div className="text-gray-600">
+                            7-day hassle-free return policy, product must be in original condition
+                          </div>
+                        </div>
+                        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <div className="font-medium text-gray-800 mb-2 flex items-center">
+                            <span className="h-6 w-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mr-2 text-xs">4</span>
+                            Customer Support
+                          </div>
+                          <div className="text-gray-600">
+                            24/7 customer service via email, phone, and live chat with multilingual support
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
-               
-            
               )}
 
               {activeTab === 'specification' && (
@@ -908,125 +900,181 @@ const ProductDetail = ({ addToCart }) => {
                   exit={{ opacity: 0, y: -10 }}
                   className="space-y-6"
                 >
-                  {(() => {
-                    // Check if specification exist and have content
-                    const hasSpecifications = product.specification && 
-                      (typeof product.specification === 'object' && Object.keys(product.specification).length > 0);
-                    
-                    if (hasSpecifications) {
-                      // Group specifications by category if possible
-                      const groupedSpecs = {};
-                      let hasGroups = false;
-                      
-                      // Try to detect if specification have categories
-                      Object.entries(product.specification).forEach(([key, value]) => {
-                        // Check if the key contains category indicators
-                        const categoryMatch = key.match(/^(.*?)\s*[:\-]\s*(.*)$/);
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm mb-6">
+                    <div className="bg-gradient-to-r from-green-50 to-white px-6 py-4 border-b border-gray-200 flex items-center">
+                      <FaInfoCircle className="text-green-500 mr-3" />
+                      <h2 className="text-xl font-semibold text-gray-800">Technical Specifications</h2>
+                    </div>
+                    <div className="p-0">
+                      {(() => {
+                        // Check if specification exist and have content
+                        const hasSpecifications = product.specification && 
+                          (typeof product.specification === 'object' && Object.keys(product.specification).length > 0);
                         
-                        if (categoryMatch && categoryMatch[1] && categoryMatch[2]) {
-                          // We have a category and a spec name
-                          const category = categoryMatch[1].trim();
-                          const specName = categoryMatch[2].trim();
+                        if (hasSpecifications) {
+                          // Group specifications by category if possible
+                          const groupedSpecs = {};
+                          let hasGroups = false;
                           
-                          if (!groupedSpecs[category]) {
-                            groupedSpecs[category] = {};
-                          }
+                          // Try to detect if specification have categories
+                          Object.entries(product.specification).forEach(([key, value]) => {
+                            // Check if the key contains category indicators
+                            const categoryMatch = key.match(/^(.*?)\s*[:\-]\s*(.*)$/);
+                            
+                            if (categoryMatch && categoryMatch[1] && categoryMatch[2]) {
+                              // We have a category and a spec name
+                              const category = categoryMatch[1].trim();
+                              const specName = categoryMatch[2].trim();
+                              
+                              if (!groupedSpecs[category]) {
+                                groupedSpecs[category] = {};
+                              }
+                              
+                              groupedSpecs[category][specName] = value;
+                              hasGroups = true;
+                            } else {
+                              // No category found, use 'General' as default
+                              if (!groupedSpecs['General']) {
+                                groupedSpecs['General'] = {};
+                              }
+                              
+                              groupedSpecs['General'][key] = value;
+                            }
+                          });
                           
-                          groupedSpecs[category][specName] = value;
-                          hasGroups = true;
-                        } else {
-                          // No category found, use 'General' as default
-                          if (!groupedSpecs['General']) {
-                            groupedSpecs['General'] = {};
-                          }
-                          
-                          groupedSpecs['General'][key] = value;
-                        }
-                      });
-                      
-                      // If we detected groups, display grouped specifications
-                      if (hasGroups) {
-                        return (
-                          <div className="space-y-6">
-                            {Object.entries(groupedSpecs).map(([category, specs]) => (
-                              <div key={category} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                                <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
-                                  <h3 className="text-lg font-medium text-gray-900">{category}</h3>
-                                </div>
-                                <table className="w-full divide-y divide-gray-200">
-                                  <tbody className="bg-white divide-y divide-gray-200">
-                                    {Object.entries(specs).map(([key, value], index) => (
-                                      <tr key={key} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                        <td className="px-6 py-4 whitespace-normal text-sm font-medium text-gray-900 w-1/3">{key}</td>
-                                        <td className="px-6 py-4 whitespace-normal text-sm text-gray-700 w-2/3">
-                                          {typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://')) ? (
-                                            <a href={value} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
-                                              {value}
-                                            </a>
-                                          ) : Array.isArray(value) ? (
-                                            <ul className="list-disc pl-5">
-                                              {value.map((item, i) => (
-                                                <li key={i}>{item}</li>
-                                              ))}
-                                            </ul>
-                                          ) : (
-                                            value
-                                          )}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      }
-                      
-                      // Otherwise, display flat specifications table
-                      return (
-                        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                          <table className="w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                              <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">Specification</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/3">Details</th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              {Object.entries(product.specification ? product.specification : {}).map(([key, value], index) => (
-                                <tr key={key} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                  <td className="px-6 py-4 whitespace-normal text-sm font-medium text-gray-900">{key}</td>
-                                  <td className="px-6 py-4 whitespace-normal text-sm text-gray-700">
-                                    {typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://')) ? (
-                                      <a href={value} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
-                                        {value}
-                                      </a>
-                                    ) : Array.isArray(value) ? (
-                                      <ul className="list-disc pl-5">
-                                        {value.map((item, i) => (
-                                          <li key={i}>{item}</li>
+                          // If we detected groups, display grouped specifications
+                          if (hasGroups) {
+                            return (
+                              <div className="divide-y divide-gray-200">
+                                {Object.entries(groupedSpecs).map(([category, specs], categoryIndex) => (
+                                  <div key={category} className="overflow-hidden">
+                                    <div className={`px-6 py-4 ${categoryIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                                      <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                                        <span className="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center mr-2 text-xs">{categoryIndex + 1}</span>
+                                        {category}
+                                      </h3>
+                                    </div>
+                                    <div className="px-6 pb-4 pt-2">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {Object.entries(specs).map(([key, value], index) => (
+                                          <div key={key} className="border border-gray-100 rounded-lg p-3 bg-white shadow-sm hover:shadow-md transition-shadow">
+                                            <div className="font-medium text-gray-700 mb-1 text-sm">{key}</div>
+                                            <div className="text-gray-600 text-sm">
+                                              {typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://')) ? (
+                                                <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                                  {value}
+                                                </a>
+                                              ) : Array.isArray(value) ? (
+                                                <ul className="list-disc pl-5">
+                                                  {value.map((item, i) => (
+                                                    <li key={i}>{item}</li>
+                                                  ))}
+                                                </ul>
+                                              ) : (
+                                                value
+                                              )}
+                                            </div>
+                                          </div>
                                         ))}
-                                      </ul>
-                                    ) : (
-                                      value
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          }
+                          
+                          // Otherwise, display flat specifications in a card grid
+                          return (
+                            <div className="p-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {Object.entries(product.specification ? product.specification : {}).map(([key, value], index) => (
+                                  <div key={key} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="font-medium text-gray-800 mb-2 flex items-center">
+                                      <span className="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center mr-2 text-xs">{index + 1}</span>
+                                      {key}
+                                    </div>
+                                    <div className="text-gray-600">
+                                      {typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://')) ? (
+                                        <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                          {value}
+                                        </a>
+                                      ) : Array.isArray(value) ? (
+                                        <ul className="list-disc pl-5">
+                                          {value.map((item, i) => (
+                                            <li key={i}>{item}</li>
+                                          ))}
+                                        </ul>
+                                      ) : (
+                                        value
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        } else {
+                          // No specifications available
+                          return (
+                            <div className="text-center py-12 px-6">
+                              <FaInfoCircle className="mx-auto mb-4 text-gray-400" size={32} />
+                              <p className="text-gray-500 mb-2">No specifications available for this product.</p>
+                              <p className="text-sm text-gray-400">Please check the description tab for more information.</p>
+                            </div>
+                          );
+                        }
+                      })()}
+                    </div>
+                  </div>
+                  
+                  {/* Service Specifications */}
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                    <div className="bg-gradient-to-r from-blue-50 to-white px-6 py-4 border-b border-gray-200 flex items-center">
+                      <FaShieldAlt className="text-blue-500 mr-3" />
+                      <h2 className="text-xl font-semibold text-gray-800">Service Specifications</h2>
+                    </div>
+                    <div className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <div className="font-medium text-gray-800 mb-2 flex items-center">
+                            <span className="h-6 w-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2 text-xs">1</span>
+                            Quality Assurance
+                          </div>
+                          <div className="text-gray-600">
+                            100% original products with manufacturer warranty and quality certification
+                          </div>
                         </div>
-                      );
-                    } else {
-                      // No specifications available
-                      return (
-                        <div className="bg-gray-50 p-6 rounded-lg text-center">
-                          <p className="text-gray-500">No specifications available for this product.</p>
+                        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <div className="font-medium text-gray-800 mb-2 flex items-center">
+                            <span className="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center mr-2 text-xs">2</span>
+                            Shipping Details
+                          </div>
+                          <div className="text-gray-600">
+                            Worldwide shipping with tracking, estimated delivery time: 3-7 business days
+                          </div>
                         </div>
-                      );
-                    }
-                  })()}
+                        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <div className="font-medium text-gray-800 mb-2 flex items-center">
+                            <span className="h-6 w-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mr-2 text-xs">3</span>
+                            Return Policy
+                          </div>
+                          <div className="text-gray-600">
+                            7-day hassle-free return policy, product must be in original condition
+                          </div>
+                        </div>
+                        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <div className="font-medium text-gray-800 mb-2 flex items-center">
+                            <span className="h-6 w-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mr-2 text-xs">4</span>
+                            Customer Support
+                          </div>
+                          <div className="text-gray-600">
+                            24/7 customer service via email, phone, and live chat with multilingual support
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
@@ -1038,6 +1086,54 @@ const ProductDetail = ({ addToCart }) => {
                   exit={{ opacity: 0, y: -10 }}
                   className="space-y-6"
                 >
+                  {/* Our Services Section */}
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm mb-6">
+                    <div className="bg-gradient-to-r from-purple-50 to-white px-6 py-4 border-b border-gray-200 flex items-center">
+                      <FaInfoCircle className="text-purple-500 mr-3" />
+                      <h2 className="text-xl font-semibold text-gray-800">Our Services</h2>
+                    </div>
+                    <div className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-center p-4 rounded-lg border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                          <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+                            <FaShieldAlt className="text-blue-600" size={20} />
+                          </div>
+                          <div>
+                            <span className="font-medium block text-lg">Quality Guarantee</span>
+                            <span className="text-gray-600">100% original products with quality assurance</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center p-4 rounded-lg border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                          <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
+                            <FaTruck className="text-green-600" size={20} />
+                          </div>
+                          <div>
+                            <span className="font-medium block text-lg">Fast Shipping</span>
+                            <span className="text-gray-600">Quick delivery worldwide with tracking</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center p-4 rounded-lg border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                          <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center mr-4">
+                            <FaExchangeAlt className="text-orange-600" size={20} />
+                          </div>
+                          <div>
+                            <span className="font-medium block text-lg">Easy Returns</span>
+                            <span className="text-gray-600">Hassle-free 7-day return policy</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center p-4 rounded-lg border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                          <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center mr-4">
+                            <FaRegClock className="text-purple-600" size={20} />
+                          </div>
+                          <div>
+                            <span className="font-medium block text-lg">24/7 Support</span>
+                            <span className="text-gray-600">Always here to help you with any questions</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                   {(() => {
                     // Check if features exist and have content
                     const hasFeatures = product.key_features && Array.isArray(product.key_features) && product.key_features.length > 0;
@@ -1172,10 +1268,25 @@ const ProductDetail = ({ addToCart }) => {
         <RelatedProductsSlider 
           currentProductId={product.id} 
           category={product.category} 
-        />
+      />
       )}
-      </div>
-  );
-};
+     
+
+      {/* Back to Top Button */}
+      
+</div>
+<BackToTopButton />
+    </div>
+
+     
+  )}
+  
+
+
+
+    
+ 
+ 
+
 
 export default ProductDetail;
